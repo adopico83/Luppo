@@ -25,3 +25,10 @@ supabase/.branches
 *.key
 next-env.d.ts
 *.tsbuildinfo
+
+# Credenciales de servicio
+*-credentials*.json
+service-account*.json
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
