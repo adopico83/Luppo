@@ -534,11 +534,9 @@ describe("catálogos del sistema", () => {
     const r = await como(db, c, (q) =>
       q<{ clave: string }>("select clave from public.munecos where es_sistema"),
     );
-    expect(r.map((m) => m.clave).sort()).toEqual([
-      "luppo",
-      "nubecita",
-      "zumbillo",
-    ]);
+    expect(r).toHaveLength(17); // Luppo + los 16 personajes elegibles
+    expect(r.map((m) => m.clave)).toContain("luppo");
+    expect(r.map((m) => m.clave)).toContain("zumbillo");
   });
 
   it("un usuario no crea, cambia ni borra muñecos del sistema", async () => {
@@ -570,7 +568,7 @@ describe("catálogos del sistema", () => {
     expect(
       await contar("select 1 from munecos where es_sistema and nombre = 'hack'"),
     ).toBe(0);
-    expect(await contar("select 1 from munecos where es_sistema")).toBe(3);
+    expect(await contar("select 1 from munecos where es_sistema")).toBe(17);
   });
 
   it("no se puede convertir un muñeco de familia en uno del sistema", async () => {
@@ -609,7 +607,7 @@ describe("catálogos del sistema", () => {
 
   it("secundarios: legibles, no escribibles", async () => {
     const r = await como(db, c, (q) => q("select * from public.secundarios"));
-    expect(r.length).toBe(14);
+    expect(r.length).toBe(18);
     await expect(
       como(db, a, (q) =>
         q("insert into public.secundarios (clave, nombre) values ('nuevo', 'Nuevo')"),
@@ -667,7 +665,7 @@ describe("semilla", () => {
     await copia.exec(SEED_SQL());
     await copia.exec(SEED_SQL());
     expect(await contarCopia()).toEqual(antes);
-    expect(antes).toEqual({ m: 3, s: 14 });
+    expect(antes).toEqual({ m: 17, s: 18 });
 
     const comodines = await copia.query<{ n: number }>(
       "select count(*)::int as n from secundarios where es_comodin",
