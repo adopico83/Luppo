@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* Paleta Luppo */
+@theme {
+  --color-salvia: #9db08f;
+  --color-ocre: #c99a4b;
+  --color-terracota: #c0694e;
+  --color-rosa: #d9a3a0;
+  --color-tinta: #2f4566;
+  --color-crema: #f4ead8;
+  --color-crema-clara: #fbf6ec;
+
+  --font-sans: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+}
+
+html {
+  /* Tipografía grande para niños: 1rem = 20px */
+  font-size: 125%;
+}
+
+body {
+  background: var(--color-crema);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
