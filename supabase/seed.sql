@@ -16,7 +16,7 @@ insert into public.munecos
   (clave, nombre, especie, personalidad, forma_de_hablar, imagen_path, lugares_favoritos, es_sistema)
 values
   -- Luppo: mascota y anfitrión, no forma parte de los 16. Ficha propia en Notion.
-  ('luppo', 'Luppo', 'lince', null, null, 'munecos/luppo.png', '{}', true),
+  ('luppo', 'Luppo', 'lince', null, null, 'munecos/luppo.jpg', '{}', true),
 
   ('dragoncito', 'Dragoncito', 'dragón',
    'Aventurero y valiente, con mucha energía; siempre quiere ver qué hay detrás de la siguiente colina.',
