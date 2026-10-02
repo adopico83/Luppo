@@ -12,8 +12,12 @@ const PATRONES = [
   /AIza[0-9A-Za-z_-]{20,}/,
 ];
 
-// Este fichero y la configuración de permisos mencionan los patrones a propósito.
-const IGNORAR = new Set(["scripts/check-secretos.mjs", "package-lock.json"]);
+// Ficheros que mencionan los patrones a propósito (sin ser secretos).
+const IGNORAR = new Set([
+  "scripts/check-secretos.mjs",
+  "package-lock.json",
+  "tests/helpers/supabase-stub.sql", // «service_role» aquí es el nombre de un rol de Postgres
+]);
 
 const archivos = execSync("git diff --cached --name-only --diff-filter=ACMR", {
   encoding: "utf8",
