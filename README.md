@@ -32,6 +32,25 @@ npm run dev                  # http://localhost:3000
 
 El service worker solo existe en producción: `npm run build && npm start`, y abrir en el navegador (instalable desde el menú).
 
+## Configurar el login (Supabase)
+
+El login es por enlace mágico (sin contraseña). En el panel de Supabase, **Authentication → URL Configuration**:
+
+- **Site URL**: la URL de producción (o `http://localhost:3000` mientras pruebas).
+- **Redirect URLs**: añade `http://localhost:3000/auth/callback` y `https://<tu-dominio-vercel>/auth/callback` (las de los previews también, si los usas).
+
+Por defecto el enlace solo funciona si se abre **en el mismo navegador** donde se pidió. Para que funcione también desde otro navegador (por ejemplo, pedirlo en la PWA instalada y abrir el email en Safari), cambia en **Authentication → Emails → Magic Link** el enlace por:
+
+```html
+<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Entrar en Luppo</a>
+```
+
+Cuando tú y la madre hayáis entrado una vez, desactiva **Authentication → Sign In / Providers → Allow new users to sign up** para que nadie más pueda crear cuenta.
+
+## Imágenes de los muñecos
+
+Cada muñeco se busca en `public/munecos/<clave>.jpg` (por ejemplo `luppo.jpg`, `zorrito.jpg`). Si falta, la app enseña un bloque suave con su nombre.
+
 ## Reglas del repo (es público)
 
 - Las claves van solo en `.env.local` y en las variables de Vercel. Nunca en el código, tests, commits ni PRs.
