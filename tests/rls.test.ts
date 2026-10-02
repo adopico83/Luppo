@@ -677,5 +677,5 @@ describe("semilla", () => {
       ),
     ).rejects.toThrow(/duplicate key/i);
     await copia.close();
-  });
+  }, 30_000); // crea una segunda base en memoria: con la máquina cargada pasa de los 5 s por defecto
 });
