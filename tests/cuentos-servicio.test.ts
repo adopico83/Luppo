@@ -23,10 +23,10 @@ const baseDatos = (extra: Record<string, Record<string, unknown>[]> = {}) =>
   });
 
 const texto = (): ResultadoTexto => ({
-  cuento: { titulo: "El panal", escenas: ["Uno.", "Dos.", "Tres.", "Cuatro."].map((t, i) => ({ texto: t, personajes: i === 0 ? [{ personaje: "zumbillo", posicion: "izquierda" as const, gesto: "revoloteo" as const, accion: "entrar" as const }] : [] })) },
+  cuento: { titulo: "El panal", tema_educativo: "contar hasta 5", escenas: ["Uno.", "Dos.", "Tres.", "Cuatro."].map((t, i) => ({ texto: t, personajes: i === 0 ? [{ personaje: "zumbillo", posicion: "izquierda" as const, gesto: "revoloteo" as const, accion: "entrar" as const }] : [] })) },
   json: { titulo: "El panal" },
   modelo: "claude-haiku-4-5",
-  version: "cuento-v2",
+  version: "cuento-v3",
   tokensEntrada: 1000,
   tokensSalida: 2000,
 });
@@ -63,7 +63,8 @@ describe("crearCuento", () => {
       estado: "listo",
       titulo: "El panal",
       modelo: "claude-haiku-4-5",
-      version_prompt: "cuento-v2",
+      version_prompt: "cuento-v3",
+      tema_educativo: "contar hasta 5",
       modelo_tts: "eleven_multilingual_v2",
       tokens_entrada: 1000,
       tokens_salida: 2000,
@@ -88,6 +89,62 @@ describe("crearCuento", () => {
     expect(escenas[0].audio_ms).toBe(2000);
     expect([...base.archivos.keys()]).toHaveLength(4);
     expect(deps.sintetizar).toHaveBeenCalledTimes(4);
+  });
+
+  it("guarda las interacciones: decisiones con consecuencia y una voz por escena, pregunta y consecuencia", async () => {
+    const { client, base } = baseDatos();
+    const base4 = texto();
+    vi.mocked(deps.generarTexto).mockResolvedValue({
+      ...base4,
+      cuento: {
+        ...base4.cuento,
+        escenas: [
+          ...base4.cuento.escenas.slice(0, 1),
+          {
+            texto: "El balón rueda.",
+            personajes: [],
+            interaccion: {
+              tipo: "elegir",
+              pregunta: "¿Chutamos o pasamos?",
+              opciones: [
+                { texto: "Chutar", emoji: "⚽", consecuencia: "¡Gooool!" },
+                { texto: "Pasar", emoji: "🤝", consecuencia: "¡Buen pase!" },
+              ],
+            },
+          },
+          {
+            texto: "Cuenta los goles.",
+            personajes: [],
+            interaccion: { tipo: "contar", instruccion: "Contemos hasta 5", hasta: 5, consecuencia: "¡Cinco!" },
+          },
+          base4.cuento.escenas[3],
+        ],
+      },
+    });
+    expect((await crearCuento(client, entrada, deps)).tipo).toBe("ok");
+    const [cuento] = base.tablas.cuentos;
+
+    const escenas = base.tablas.escenas;
+    expect(escenas.map((e) => [e.tipo, e.interaccion ?? null, e.pregunta ?? null])).toEqual([
+      ["narracion", null, null],
+      ["decision", "elegir", "¿Chutamos o pasamos?"],
+      ["decision", "contar", "Contemos hasta 5"],
+      ["final", null, null],
+    ]);
+    expect(escenas[2].interaccion_datos).toEqual({ hasta: 5 });
+    expect(escenas[1].pregunta_audio_path).toBe(`${FAMILIA}/p-1/${cuento.id}/escena-2-pregunta.mp3`);
+
+    const decisiones = base.tablas.decisiones;
+    expect(decisiones.map((d) => [d.etiqueta, d.icono_clave, d.consecuencia, d.destino_clave, d.orden])).toEqual([
+      ["Chutar", "⚽", "¡Gooool!", "escena-3", 1],
+      ["Pasar", "🤝", "¡Buen pase!", "escena-3", 2],
+      ["5", "🔢", "¡Cinco!", "escena-4", 1],
+    ]);
+    expect(decisiones.every((d) => typeof d.audio_path === "string")).toBe(true);
+
+    // 4 escenas + 2 preguntas + 3 consecuencias, todas con su voz.
+    expect(deps.sintetizar).toHaveBeenCalledTimes(9);
+    expect(base.archivos.size).toBe(9);
   });
 
   it("pasa al generador la edad calculada, el idioma de la familia y las fichas en orden", async () => {

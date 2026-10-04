@@ -6,7 +6,7 @@ export const MODELO_TEXTO_POR_DEFECTO = "claude-haiku-4-5";
 export const MODELO_VOZ_POR_DEFECTO = "eleven_multilingual_v2";
 
 // Cambia cuando cambia el prompt: queda guardado en cuentos.version_prompt para poder comparar.
-export const VERSION_PROMPT = "cuento-v2";
+export const VERSION_PROMPT = "cuento-v3";
 
 // Tope duro por familia y día, aunque ajustes_familia.cuentos_max_dia diga más.
 export const LIMITE_CUENTOS_DIA = 10;
