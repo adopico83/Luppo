@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_PERSONAJES,
   alternarSeleccion,
+  parsearPersonajes,
   puedeContinuar,
 } from "@/lib/seleccion";
 
@@ -50,5 +51,24 @@ describe("puedeContinuar", () => {
     expect(puedeContinuar(["a"])).toBe(true);
     expect(puedeContinuar(["a", "b", "c"])).toBe(true);
     expect(puedeContinuar(["a", "b", "c", "d"])).toBe(false);
+  });
+});
+
+describe("parsearPersonajes", () => {
+  it("lee de 1 a 3 claves sin repetir", () => {
+    expect(parsearPersonajes("luppo")).toEqual(["luppo"]);
+    expect(parsearPersonajes("zorrito,flan,luna")).toEqual(["zorrito", "flan", "luna"]);
+    expect(parsearPersonajes("flan,flan")).toEqual(["flan"]);
+    expect(parsearPersonajes(["flan,luna", "otro"])).toEqual(["flan", "luna"]);
+  });
+
+  it("rechaza vacío, más de 3 y claves raras", () => {
+    expect(parsearPersonajes(undefined)).toBeNull();
+    expect(parsearPersonajes("")).toBeNull();
+    expect(parsearPersonajes("a,b,c,d")).toBeNull();
+    expect(parsearPersonajes("flan,,luna")).toBeNull();
+    expect(parsearPersonajes("Flan")).toBeNull();
+    expect(parsearPersonajes("<script>")).toBeNull();
+    expect(parsearPersonajes("../x")).toBeNull();
   });
 });
