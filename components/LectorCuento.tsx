@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { BotonGigante } from "@/components/BotonGigante";
+import { BotonLector, IconoFin, IconoPausa, IconoRepetir, IconoSiguiente } from "@/components/BotonLector";
 import { FondoLuppo } from "@/components/FondoLuppo";
 import { useT } from "@/components/I18nProvider";
 import { ImagenMuneco } from "@/components/ImagenMuneco";
@@ -102,7 +102,8 @@ export function LectorCuento({ cuento }: { cuento: CuentoLectura }) {
 
   return (
     <main className="relative flex h-dvh flex-col justify-end overflow-hidden">
-      <div aria-hidden="true" data-testid="fondo-lugar" className="pointer-events-none fixed inset-0 -z-20">
+      <div aria-hidden="true" data-testid="fondo-lugar" className="pointer-events-none fixed inset-x-0 top-0 -z-20 h-[58dvh] ancho:inset-0 ancho:h-auto"
+      >
         <Image
           src={fondoDeLugar(cuento.lugar)}
           alt=""
@@ -118,7 +119,7 @@ export function LectorCuento({ cuento }: { cuento: CuentoLectura }) {
       <h1 className="sr-only">{cuento.titulo}</h1>
 
       {/* Escenario: los pies de los personajes pisan el suelo del dibujo (parte baja-media). */}
-      <ul aria-label={t("cuento.personajes")} className="pointer-events-none absolute inset-0">
+      <ul aria-label={t("cuento.personajes")} className="pointer-events-none absolute inset-x-0 top-0 h-[58dvh] ancho:inset-0 ancho:h-auto">
         {puesta.map(({ clave, nombre, izquierda, lado, gesto: gestoPedido, movimiento: movimientoPedido }) => {
           const celebra = clave === quienCelebra;
           const gesto = celebra ? "giro-brillo" : gestoPedido;
@@ -127,7 +128,7 @@ export function LectorCuento({ cuento }: { cuento: CuentoLectura }) {
           <li
             key={`${indice}-${clave === quienCelebra}-${clave}`}
             data-testid={`personaje-${clave}`}
-            className="absolute bottom-[38%] h-[40dvh] w-[32vw] -translate-x-1/2 md:bottom-[34%] md:h-[48dvh] md:w-[24vw]"
+            className="absolute bottom-[8%] h-[36dvh] w-[30vw] -translate-x-1/2 ancho:bottom-[38%] ancho:h-[40dvh] ancho:w-[32vw] md:ancho:bottom-[34%] md:ancho:h-[48dvh] md:ancho:w-[24vw]"
             style={{ left: `${izquierda}%`, "--lado": lado } as CSSProperties}
           >
             {/* Capa de movimiento (entrar, caminar...) entre la posición y el gesto del dibujo. */}
@@ -155,7 +156,7 @@ export function LectorCuento({ cuento }: { cuento: CuentoLectura }) {
         <span
           aria-hidden="true"
           data-testid="celebracion"
-          className="pointer-events-none absolute inset-x-0 top-[12%] animate-bounce text-center text-7xl"
+          className="pointer-events-none absolute inset-x-0 top-[8%] animate-bounce text-center text-6xl ancho:top-[12%] ancho:text-7xl"
         >
           🎉
         </span>
@@ -174,58 +175,71 @@ export function LectorCuento({ cuento }: { cuento: CuentoLectura }) {
         />
       )}
 
-      {/* Franja de abajo: poco texto para tapar poco dibujo. */}
-      <div className="relative flex flex-col gap-3 p-3 md:flex-row md:items-end md:gap-5 md:p-5">
-        <div className="flex-1 rounded-3xl border-2 border-tinta/20 bg-crema-clara/90 px-5 py-3 text-tinta shadow-md">
-          <p className="text-lg font-bold leading-snug md:text-xl">{escena.texto}</p>
-          {inter && (
-            <p data-testid="pregunta" className="mt-2 text-xl font-extrabold leading-snug md:text-2xl">
-              {elegida ? elegida.consecuencia : inter.pregunta}
-            </p>
-          )}
-          <p className="mt-1 text-sm font-bold opacity-70">
+      {/* Franja de abajo. Móvil en vertical: fija, el 42 % de la pantalla y por debajo de la escena, así
+          que nada tapa a los personajes. Pantalla ancha: encima de la escena, como siempre. */}
+      <div className="relative flex h-[42dvh] flex-col gap-2 border-t-2 border-tinta/20 bg-crema-clara px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] ancho:h-auto ancho:flex-row ancho:items-end ancho:gap-5 ancho:border-0 ancho:bg-transparent ancho:p-5">
+        <div className="flex min-h-0 flex-1 flex-col text-tinta ancho:rounded-3xl ancho:border-2 ancho:border-tinta/20 ancho:bg-crema-clara/90 ancho:px-5 ancho:py-3 ancho:shadow-md ancho:flex-1">
+          <div data-testid="texto-escena" className="max-h-[100px] min-h-0 flex-1 overflow-y-auto ancho:max-h-none ancho:flex-none ancho:overflow-visible">
+            <p className="text-[17px] font-bold leading-snug ancho:text-xl">{escena.texto}</p>
+            {inter && (
+              <p data-testid="pregunta" className="mt-1 text-[17px] font-extrabold leading-snug ancho:mt-2 ancho:text-2xl">
+                {elegida ? elegida.consecuencia : inter.pregunta}
+              </p>
+            )}
+          </div>
+          <p className="mt-1 shrink-0 text-xs font-bold opacity-70 ancho:text-sm">
             {t("cuento.escena", { n: indice + 1, total: cuento.escenas.length })}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex shrink-0 items-center justify-center gap-1.5 ancho:flex-wrap ancho:gap-3">
           {clips.length > 0 && (
-            <BotonGigante variante="ocre" onClick={alternarVoz} aria-pressed={sonando}>
+            <BotonLector
+              variante="ocre"
+              onClick={alternarVoz}
+              aria-pressed={sonando}
+              icono={sonando ? <IconoPausa /> : <IconoRepetir />}
+            >
               {t(sonando ? "cuento.pausar" : "cuento.repetir")}
-            </BotonGigante>
+            </BotonLector>
           )}
           {pendiente && inter ? (
             inter.opciones.map((opcion) => (
-              <BotonGigante
+              <button
                 key={opcion.id}
-                variante="salvia"
+                type="button"
                 onClick={() => responder(opcion)}
                 aria-label={inter.tipo === "elegir" ? opcion.texto : inter.pregunta}
                 data-testid={`opcion-${inter.tipo}`}
-                className={`min-h-[150px] min-w-[150px] flex-col gap-1 ${terminado ? "animate-pulse ring-8 ring-ocre" : ""}`}
+                className={`flex h-[104px] w-[96px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl bg-salvia px-1 text-center font-extrabold text-tinta shadow-md transition-transform active:scale-95 ancho:min-h-[150px] ancho:h-auto ancho:w-auto ancho:min-w-[150px] ancho:gap-1 ancho:rounded-3xl ancho:px-8 ancho:text-2xl ${terminado ? "animate-pulse ring-4 ring-ocre ancho:ring-8" : ""}`}
               >
-                <span aria-hidden="true" className="text-7xl leading-none">
+                <span aria-hidden="true" className="text-[44px] leading-none ancho:text-7xl">
                   {opcion.icono}
                 </span>
-                <span aria-hidden="true">
+                <span aria-hidden="true" className="line-clamp-2 text-[15px] leading-tight ancho:text-2xl">
                   {inter.tipo === "elegir"
                     ? opcion.texto
                     : t(inter.tipo === "tocar" ? "cuento.tocar" : "cuento.contado")}
                 </span>
-              </BotonGigante>
+              </button>
             ))
           ) : esUltima ? (
-            <BotonGigante href="/" className={terminado ? "animate-pulse ring-8 ring-ocre" : ""}>
+            <BotonLector
+              href="/"
+              icono={<IconoFin />}
+              className={terminado ? "animate-pulse ring-4 ring-ocre ancho:ring-8" : ""}
+            >
               {t("cuento.fin")}
-            </BotonGigante>
+            </BotonLector>
           ) : (
-            <BotonGigante
+            <BotonLector
               onClick={siguiente}
               data-resaltado={terminado}
-              className={terminado ? "animate-pulse ring-8 ring-ocre" : ""}
+              icono={<IconoSiguiente />}
+              className={terminado ? "animate-pulse ring-4 ring-ocre ancho:ring-8" : ""}
             >
               {t("cuento.siguiente")}
-            </BotonGigante>
+            </BotonLector>
           )}
         </div>
       </div>
