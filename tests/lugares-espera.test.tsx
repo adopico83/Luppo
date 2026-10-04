@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { act, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { StrictMode } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CasaLuppo } from "@/components/CasaLuppo";
 import { PantallaEspera } from "@/components/PantallaEspera";
 import { LUGARES, esLugar, fondoDeLugar } from "@/lib/catalogo/lugares";
@@ -21,10 +22,16 @@ vi.mock("@/lib/i18n/servidor", () => ({
 
 const params = <T,>(valor: T) => Promise.resolve(valor);
 
+// Nada de red real: /espera pide el cuento a /api/cuentos.
+const fetchMock = vi.fn();
+
 beforeEach(() => {
   replace.mockClear();
   redirect.mockClear();
+  fetchMock.mockReset().mockReturnValue(new Promise(() => {}));
+  vi.stubGlobal("fetch", fetchMock);
 });
+afterEach(() => vi.unstubAllGlobals());
 
 describe("catálogo de lugares", () => {
   it("tiene los 8 lugares, con fondo ilustrado y nombre en los dos idiomas", () => {
@@ -97,10 +104,16 @@ describe("ruta de espera", () => {
 });
 
 describe("pantalla de espera", () => {
+  const props = { personajes: ["flan", "luna"], lugar: "bosque" };
+  const respuesta = (estado: number, cuerpo: unknown = {}) =>
+    ({ ok: estado >= 200 && estado < 300, status: estado, json: async () => cuerpo }) as Response;
+
   beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
 
   it("Luppo hace malabares con 3 bolitas y las frases rotan cada 3 s", () => {
-    const { container } = render(<PantallaEspera />);
+    fetchMock.mockReturnValue(new Promise(() => {}));
+    const { container } = render(<PantallaEspera {...props} />);
     expect(container.querySelectorAll(".malabar-bola")).toHaveLength(3);
     expect(screen.getByAltText("Luppo").className).toContain("malabar-luppo");
 
@@ -112,21 +125,84 @@ describe("pantalla de espera", () => {
     expect(frase()).toBe("¡Casi lo tengo!");
   });
 
-  it("a los 4 s vuelve a la Home con el aviso, y solo una vez", () => {
-    render(<PantallaEspera />);
-    act(() => void vi.advanceTimersByTime(3900));
-    expect(replace).not.toHaveBeenCalled();
-    act(() => void vi.advanceTimersByTime(200));
+  it("pide el cuento una sola vez con personajes y lugar, y al terminar navega a /cuento/[id]", async () => {
+    fetchMock.mockResolvedValue(respuesta(200, { id: "abc-123" }));
+    render(<PantallaEspera {...props} />);
+    await act(async () => {});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/cuentos");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({ personajes: ["flan", "luna"], lugar: "bosque" });
     expect(replace).toHaveBeenCalledTimes(1);
-    expect(replace).toHaveBeenCalledWith("/?aviso=cuento-pronto");
+    expect(replace).toHaveBeenCalledWith("/cuento/abc-123");
     act(() => void vi.advanceTimersByTime(10_000));
     expect(replace).toHaveBeenCalledTimes(1);
   });
 
-  it("al salir de la pantalla cancela la vuelta a la Home", () => {
-    const { unmount } = render(<PantallaEspera />);
+  it("mientras tarda no navega y mantiene frases y malabares", async () => {
+    fetchMock.mockReturnValue(new Promise(() => {}));
+    render(<PantallaEspera {...props} />);
+    act(() => void vi.advanceTimersByTime(20_000));
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toBeTruthy();
+  });
+
+  it("aunque React la monte dos veces (StrictMode) solo hay una petición y se navega", async () => {
+    fetchMock.mockResolvedValue(respuesta(200, { id: "x1" }));
+    render(
+      <StrictMode>
+        <PantallaEspera {...props} />
+      </StrictMode>,
+    );
+    await act(async () => {});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith("/cuento/x1");
+  });
+
+  it("sin claves en el servidor lleva al cuento de ejemplo con la misma elección", async () => {
+    fetchMock.mockResolvedValue(respuesta(200, { ejemplo: true }));
+    render(<PantallaEspera {...props} />);
+    await act(async () => {});
+    const destino = new URL(replace.mock.calls[0][0], "http://luppo.test");
+    expect(destino.pathname).toBe("/cuento/ejemplo");
+    expect(destino.searchParams.get("personajes")).toBe("flan,luna");
+    expect(destino.searchParams.get("lugar")).toBe("bosque");
+  });
+
+  it("al pasarse del límite diario avisa con cariño y vuelve a la Home", async () => {
+    fetchMock.mockResolvedValue(respuesta(429, { error: "limite" }));
+    render(<PantallaEspera {...props} />);
+    await act(async () => {});
+    expect(screen.getByRole("alert").textContent).toBe(t("espera.limite", "es"));
+    expect(screen.getByRole("link", { name: "Volver" }).getAttribute("href")).toBe("/");
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("si falla el servidor o la red, mensaje amable y vuelta a elegir lugar", async () => {
+    fetchMock.mockResolvedValueOnce(respuesta(502, { error: "generacion" }));
+    const { unmount } = render(<PantallaEspera {...props} />);
+    await act(async () => {});
+    expect(screen.getByRole("alert").textContent).toBe(t("espera.errorGenerico", "es"));
+    expect(screen.getByRole("link", { name: "Volver" }).getAttribute("href")).toBe(
+      "/lugares?personajes=flan,luna",
+    );
     unmount();
-    act(() => void vi.advanceTimersByTime(10_000));
+
+    fetchMock.mockRejectedValueOnce(new Error("sin red"));
+    render(<PantallaEspera personajes={["flan"]} lugar="playa" />);
+    await act(async () => {});
+    expect(screen.getByRole("alert").textContent).toBe(t("espera.errorGenerico", "es"));
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("al salir de la pantalla no navega aunque llegue la respuesta", async () => {
+    let resolver: (r: Response) => void = () => {};
+    fetchMock.mockReturnValue(new Promise<Response>((r) => (resolver = r)));
+    const { unmount } = render(<PantallaEspera {...props} />);
+    unmount();
+    resolver(respuesta(200, { id: "tarde" }));
+    await act(async () => {});
     expect(replace).not.toHaveBeenCalled();
   });
 });

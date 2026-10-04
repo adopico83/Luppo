@@ -12,9 +12,10 @@ export default async function EsperaPage({
   const { personajes, lugar } = await searchParams;
   const claves = parsearPersonajes(personajes);
   if (!claves) redirect("/personajes");
-  if (!esLugar(Array.isArray(lugar) ? lugar[0] : lugar)) {
+  const claveLugar = Array.isArray(lugar) ? lugar[0] : lugar;
+  if (!esLugar(claveLugar)) {
     redirect(`/lugares?personajes=${claves.join(",")}`);
   }
 
-  return <PantallaEspera />;
+  return <PantallaEspera personajes={claves} lugar={claveLugar} />;
 }
