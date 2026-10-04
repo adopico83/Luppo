@@ -9,5 +9,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["tests/setup-jsdom.ts", "tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
+    // Arrancar PGlite (Postgres en WASM) en varios ficheros a la vez puede pasar de los 10 s por defecto.
+    hookTimeout: 60_000,
+    testTimeout: 30_000,
   },
 });
