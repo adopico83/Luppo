@@ -40,11 +40,14 @@ export const eu: Record<ClaveTexto, string> = {
   // Lugares
   "lugares.titulo": "¿Dónde pasa el cuento?", // TODO(eu)
   "lugares.volver": "Volver", // TODO(eu)
-  "lugar.bosque": "El bosque", // TODO(eu)
-  "lugar.playa": "La playa", // TODO(eu)
-  "lugar.espacio": "El espacio", // TODO(eu)
-  "lugar.castillo": "El castillo", // TODO(eu)
-  "lugar.fondo_del_mar": "El fondo del mar", // TODO(eu)
+  "lugar.bosque": "Bosque", // TODO(eu)
+  "lugar.playa": "Playa", // TODO(eu)
+  "lugar.espacio": "Espacio", // TODO(eu)
+  "lugar.castillo": "Castillo", // TODO(eu)
+  "lugar.fondo-mar": "Fondo del mar", // TODO(eu)
+  "lugar.futbol": "Campo de fútbol", // TODO(eu)
+  "lugar.patinete": "Paseo en patinete", // TODO(eu)
+  "lugar.atracciones": "Parque de atracciones", // TODO(eu)
 
   // Espera
   "espera.titulo": "Luppo está preparando tu cuento", // TODO(eu)

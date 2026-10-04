@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FondoLuppo } from "@/components/FondoLuppo";
 import { CarruselPersonajes } from "@/components/CarruselPersonajes";
 import { textosServidor } from "@/lib/i18n/servidor";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +17,8 @@ export default async function PersonajesPage() {
     .order("nombre");
 
   return (
-    <main className="flex min-h-dvh flex-col gap-8 bg-crema p-6 md:p-10">
+    <main className="flex min-h-dvh flex-col gap-8 p-6 md:p-10">
+      <FondoLuppo />
       <Link
         href="/"
         className="inline-flex min-h-[120px] min-w-[120px] items-center self-start text-2xl font-extrabold text-tinta underline"
