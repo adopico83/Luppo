@@ -23,10 +23,10 @@ const baseDatos = (extra: Record<string, Record<string, unknown>[]> = {}) =>
   });
 
 const texto = (): ResultadoTexto => ({
-  cuento: { titulo: "El panal", escenas: [{ texto: "Uno." }, { texto: "Dos." }, { texto: "Tres." }, { texto: "Cuatro." }] },
+  cuento: { titulo: "El panal", escenas: ["Uno.", "Dos.", "Tres.", "Cuatro."].map((t, i) => ({ texto: t, personajes: i === 0 ? [{ personaje: "zumbillo", posicion: "izquierda" as const, gesto: "revoloteo" as const, accion: "entrar" as const }] : [] })) },
   json: { titulo: "El panal" },
   modelo: "claude-haiku-4-5",
-  version: "cuento-v1",
+  version: "cuento-v2",
   tokensEntrada: 1000,
   tokensSalida: 2000,
 });
@@ -63,7 +63,7 @@ describe("crearCuento", () => {
       estado: "listo",
       titulo: "El panal",
       modelo: "claude-haiku-4-5",
-      version_prompt: "cuento-v1",
+      version_prompt: "cuento-v2",
       modelo_tts: "eleven_multilingual_v2",
       tokens_entrada: 1000,
       tokens_salida: 2000,
@@ -81,6 +81,9 @@ describe("crearCuento", () => {
       ["escena-4", 4, "final"],
     ]);
     expect(escenas.every((e) => e.fondo_clave === "bosque")).toBe(true);
+    expect(escenas[0].acciones).toEqual([
+      { personaje: "zumbillo", posicion: "izquierda", gesto: "revoloteo", accion: "entrar" },
+    ]);
     expect(escenas[0].audio_path).toBe(`${FAMILIA}/p-1/${cuento.id}/escena-1.mp3`);
     expect(escenas[0].audio_ms).toBe(2000);
     expect([...base.archivos.keys()]).toHaveLength(4);

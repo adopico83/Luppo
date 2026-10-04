@@ -20,6 +20,12 @@ export const GESTOS = {
   gargolito: "agacha-saltito",
 } as const;
 
+// Nombres de gesto (sin el prefijo `gesto-`): los que puede pedir el generador para una escena.
+export const NOMBRES_GESTO = [...new Set(Object.values(GESTOS))] as [
+  (typeof GESTOS)[keyof typeof GESTOS],
+  ...(typeof GESTOS)[keyof typeof GESTOS][],
+];
+
 export type ClaveGesto = keyof typeof GESTOS;
 
 // Clase CSS del gesto de un personaje, o undefined si no tiene (p. ej. uno creado por la familia).

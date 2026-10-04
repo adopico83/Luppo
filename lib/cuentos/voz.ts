@@ -3,6 +3,7 @@ const BASE = "https://api.elevenlabs.io/v1/text-to-speech";
 const FORMATO = "mp3_44100_128";
 // 128 kbps = 16 000 bytes por segundo: sirve para estimar la duración sin descodificar el mp3.
 const BYTES_POR_MS = 16;
+const MAX_DETALLE = 300;
 
 export type ConfigVoz = { apiKey: string; voiceId: string; modelo: string };
 
@@ -31,7 +32,12 @@ export async function sintetizarVoz(
     },
   );
   if (!respuesta.ok) {
-    throw new ErrorVoz(`ElevenLabs respondió ${respuesta.status}`, respuesta.status);
+    // El cuerpo explica el motivo (clave inválida, voz inexistente, cuota...). Nunca lleva la API key.
+    const detalle = await respuesta.text().catch(() => "");
+    throw new ErrorVoz(
+      `ElevenLabs respondió ${respuesta.status}${detalle ? `: ${detalle.slice(0, MAX_DETALLE)}` : ""}`,
+      respuesta.status,
+    );
   }
   const audio = new Uint8Array(await respuesta.arrayBuffer());
   if (audio.byteLength === 0) throw new ErrorVoz("ElevenLabs devolvió un audio vacío");

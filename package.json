@@ -12,7 +12,8 @@
     "check:secretos": "node scripts/check-secretos.mjs",
     "prepare": "git config core.hooksPath .githooks",
     "iconos": "node scripts/generar-iconos.mjs",
-    "recortar:luppo": "node scripts/recortar-luppo.mjs"
+    "recortar:luppo": "node scripts/recortar-luppo.mjs",
+    "recortar:munecos": "node scripts/recortar-munecos.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.71",

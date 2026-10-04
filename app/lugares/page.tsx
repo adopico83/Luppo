@@ -37,7 +37,8 @@ export default async function LugaresPage({
                 src={fondo}
                 alt=""
                 fill
-                sizes="(min-width: 896px) 224px, (min-width: 768px) 25vw, 50vw"
+                sizes="(max-width: 768px) 50vw, 25vw"
+                quality={88}
                 className="object-cover"
               />
               <span className="relative bg-crema/85 px-2 py-1 text-center text-base font-extrabold leading-tight text-tinta backdrop-blur-sm md:text-lg">
