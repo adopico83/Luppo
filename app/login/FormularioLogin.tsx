@@ -2,9 +2,12 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { BotonGigante } from "@/components/BotonGigante";
+import { useT } from "@/components/I18nProvider";
 import { LuppoLogin } from "@/components/LuppoLogin";
 import { enviarEnlace, type EstadoLogin } from "./actions";
-import { ESPERA_REENVIO_S, SALUDO } from "./textos";
+
+// Segundos antes de poder pedir otro enlace (Supabase limita los envíos por email).
+export const ESPERA_REENVIO_S = 60;
 
 const inicial: EstadoLogin = { ok: null, mensaje: "" };
 
@@ -14,6 +17,7 @@ const claseInput =
 // Bocadillo de Luppo + formulario. El bocadillo es la única región «viva»: lo que dice Luppo
 // (saludo, enlace enviado, errores) se anuncia ahí.
 export function FormularioLogin() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [espera, setEspera] = useState(0);
 
@@ -41,7 +45,7 @@ export function FormularioLogin() {
         role="status"
         className="relative w-full rounded-3xl border-2 border-tinta/20 bg-crema-clara px-5 py-4 text-center text-xl font-bold text-tinta shadow-md after:absolute after:left-1/2 after:top-full after:-mt-3 after:h-5 after:w-5 after:-translate-x-1/2 after:rotate-45 after:border-b-2 after:border-r-2 after:border-tinta/20 after:bg-crema-clara after:content-['']"
       >
-        {estado.mensaje || SALUDO}
+        {t(estado.mensaje || "login.saludo")}
       </p>
 
       <LuppoLogin />
@@ -59,13 +63,13 @@ export function FormularioLogin() {
               disabled={enviando || espera > 0}
               className="w-full"
             >
-              {enviando ? "Enviando…" : `Volver a enviar${cuenta}`}
+              {enviando ? t("login.enviando") : `${t("login.reenviar")}${cuenta}`}
             </BotonGigante>
           </>
         ) : (
           <>
             <label htmlFor="email" className="text-xl font-extrabold text-tinta">
-              Correo de mamá o papá
+              {t("login.etiquetaCorreo")}
             </label>
             <input
               id="email"
@@ -74,7 +78,7 @@ export function FormularioLogin() {
               inputMode="email"
               autoComplete="email"
               required
-              placeholder="mama@ejemplo.com"
+              placeholder={t("login.placeholderCorreo")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={claseInput}
@@ -84,7 +88,11 @@ export function FormularioLogin() {
               disabled={enviando || espera > 0}
               className="w-full"
             >
-              {enviando ? "Enviando…" : espera > 0 ? `Espera${cuenta}` : "Entrar"}
+              {enviando
+                ? t("login.enviando")
+                : espera > 0
+                  ? `${t("login.espera")}${cuenta}`
+                  : t("login.entrar")}
             </BotonGigante>
           </>
         )}
