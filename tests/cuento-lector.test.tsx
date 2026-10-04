@@ -102,11 +102,11 @@ describe("LectorCuento", () => {
     expect(screen.getByTestId("personaje-luna").querySelector(".mover-patinete")).toBeNull();
   });
 
-  it("el texto va en una franja pequeña: text-lg en móvil y text-xl en escritorio", () => {
+  it("el texto va en una franja pequeña: 17 px en móvil y text-xl en pantalla ancha", () => {
     render(<LectorCuento cuento={cuento} />);
     const texto = screen.getByText("Primera escena.");
-    expect(texto.className).toContain("text-lg");
-    expect(texto.className).toContain("md:text-xl");
+    expect(texto.className).toContain("text-[17px]");
+    expect(texto.className).toContain("ancho:text-xl");
   });
 
   it("muestra las escenas de una en una con botón gigante «Siguiente» y acaba en «Fin»", () => {

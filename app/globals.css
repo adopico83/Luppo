@@ -257,3 +257,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   [class*="mover-"] { animation: none !important; }
 }
+
+/* Diseño «ancho» del lector de cuentos: escritorio, tablet y móvil en horizontal. El móvil en
+   vertical usa el diseño apilado (escena arriba, controles abajo). */
+@custom-variant ancho (@media (min-width: 48rem), (orientation: landscape));
