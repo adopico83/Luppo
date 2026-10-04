@@ -52,6 +52,17 @@ export const es = {
   "espera.frase2": "¡Casi lo tengo!",
   "espera.frase3": "Buscando las palabras mágicas…",
   "espera.frase4": "Mezclando aventuras…",
+  "espera.errorGenerico": "Uy, el cuento se ha enredado. Probamos otra vez en un ratito.",
+  "espera.limite": "¡Hoy ya hemos leído muchos cuentos! Mañana preparo otro, ¿vale?",
+  "espera.volver": "Volver",
+
+  // Cuento
+  "cuento.personajes": "Personajes del cuento",
+  "cuento.escena": "Escena {n} de {total}",
+  "cuento.escuchar": "Escuchar",
+  "cuento.pausar": "Pausar",
+  "cuento.siguiente": "Siguiente",
+  "cuento.fin": "Fin",
 } as const;
 
 export type ClaveTexto = keyof typeof es;

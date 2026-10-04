@@ -17,6 +17,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.71",
     "@ai-sdk/openai": "^4.0.83",
+    "@anthropic-ai/sdk": "^0.131.0",
     "@google-cloud/text-to-speech": "^7.1.1",
     "@rive-app/react-canvas": "^4.36.0",
     "@serwist/next": "^9.5.12",

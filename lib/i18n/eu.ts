@@ -55,5 +55,16 @@ export const eu: Record<ClaveTexto, string> = {
   "espera.frase2": "¡Casi lo tengo!", // TODO(eu)
   "espera.frase3": "Buscando las palabras mágicas…", // TODO(eu)
   "espera.frase4": "Mezclando aventuras…", // TODO(eu)
+  "espera.errorGenerico": "Ai! Ipuina korapilatu zaigu. Saia gaitezen berriro apur bat geroago.",
+  "espera.limite": "Gaur ipuin asko irakurri ditugu! Bihar beste bat prestatuko dizut, ados?",
+  "espera.volver": "Atzera",
+
+  // Cuento
+  "cuento.personajes": "Ipuineko pertsonaiak",
+  "cuento.escena": "{n}. eszena ({total} guztira)",
+  "cuento.escuchar": "Entzun",
+  "cuento.pausar": "Pausatu",
+  "cuento.siguiente": "Hurrengoa",
+  "cuento.fin": "Amaiera",
 
 };
