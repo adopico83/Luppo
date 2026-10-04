@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/I18nProvider";
 import { reducirMovimiento } from "@/lib/movimiento";
 import { BotonGigante } from "@/components/BotonGigante";
 import { ImagenMuneco } from "@/components/ImagenMuneco";
@@ -17,6 +18,7 @@ const claseFlecha =
   "hidden md:flex min-h-[120px] min-w-[120px] shrink-0 items-center justify-center rounded-3xl bg-crema-clara text-5xl font-extrabold text-tinta shadow-md transition-transform active:scale-95";
 
 export function CarruselPersonajes({ munecos }: Props) {
+  const t = useT();
   const router = useRouter();
   const pista = useRef<HTMLDivElement>(null);
   const [seleccion, setSeleccion] = useState<string[]>([]);
@@ -27,7 +29,7 @@ export function CarruselPersonajes({ munecos }: Props) {
     if (!reducirMovimiento()) setGesto(clave);
     const nueva = alternarSeleccion(seleccion, clave);
     if (nueva === seleccion) {
-      setAviso(`Solo puedes elegir ${MAX_PERSONAJES}`);
+      setAviso(t("carrusel.maximo", { max: MAX_PERSONAJES }));
       return;
     }
     setAviso("");
@@ -45,7 +47,7 @@ export function CarruselPersonajes({ munecos }: Props) {
       <div className="flex items-center gap-4">
         <button
           type="button"
-          aria-label="Ver personajes anteriores"
+          aria-label={t("carrusel.anteriores")}
           onClick={() => desplazar(-1)}
           className={claseFlecha}
         >
@@ -92,10 +94,8 @@ export function CarruselPersonajes({ munecos }: Props) {
 
           <button
             type="button"
-            aria-label="Crear tu propio personaje"
-            onClick={() =>
-              setAviso("¡Muy pronto podrás crear tu propio personaje!")
-            }
+            aria-label={t("carrusel.crear")}
+            onClick={() => setAviso(t("carrusel.crearPronto"))}
             className="flex aspect-square min-h-[120px] min-w-[120px] flex-[0_0_max(9rem,23%)] snap-start items-center justify-center rounded-3xl bg-salvia/30 text-7xl font-extrabold text-tinta shadow-md transition-transform active:scale-95"
           >
             +
@@ -104,7 +104,7 @@ export function CarruselPersonajes({ munecos }: Props) {
 
         <button
           type="button"
-          aria-label="Ver más personajes"
+          aria-label={t("carrusel.siguientes")}
           onClick={() => desplazar(1)}
           className={claseFlecha}
         >
@@ -121,7 +121,7 @@ export function CarruselPersonajes({ munecos }: Props) {
 
       <div className="flex flex-col items-center gap-4">
         <p className="text-2xl font-extrabold">
-          Has elegido {seleccion.length} de {MAX_PERSONAJES}
+          {t("carrusel.elegidos", { n: seleccion.length, max: MAX_PERSONAJES })}
         </p>
         <BotonGigante
           variante="salvia"
@@ -130,7 +130,7 @@ export function CarruselPersonajes({ munecos }: Props) {
             router.push(`/lugares?personajes=${seleccion.join(",")}`)
           }
         >
-          Siguiente
+          {t("carrusel.siguiente")}
         </BotonGigante>
       </div>
     </div>

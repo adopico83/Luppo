@@ -150,6 +150,41 @@ body {
   80% { transform: translateY(0) scale(1.04, 0.96); }
 }
 
+/* Luppo haciendo malabares en la pantalla de espera: tres bolitas giran en bucle sobre sus manos. */
+.malabar-bola {
+  transform: translateX(var(--x, 0)); /* posición fija si no hay movimiento */
+  animation: malabar-bola 1.8s linear infinite;
+}
+.malabar-bola-1 { --x: -1.8rem; animation-delay: 0s; }
+.malabar-bola-2 { --x: 0rem; animation-delay: -0.6s; }
+.malabar-bola-3 { --x: 1.8rem; animation-delay: -1.2s; }
+.malabar-luppo { animation: malabar-luppo 1.8s ease-in-out infinite; transform-origin: 50% 100%; }
+
+@keyframes malabar-bola {
+  0% { transform: translate(70px, -0px); }
+  6.25% { transform: translate(65px, -21px); }
+  12.5% { transform: translate(49px, -40px); }
+  18.75% { transform: translate(27px, -52px); }
+  25% { transform: translate(0px, -56px); }
+  31.25% { transform: translate(-27px, -52px); }
+  37.5% { transform: translate(-49px, -40px); }
+  43.75% { transform: translate(-65px, -21px); }
+  50% { transform: translate(-70px, -0px); }
+  56.25% { transform: translate(-65px, 5px); }
+  62.5% { transform: translate(-49px, 8px); }
+  68.75% { transform: translate(-27px, 11px); }
+  75% { transform: translate(-0px, 12px); }
+  81.25% { transform: translate(27px, 11px); }
+  87.5% { transform: translate(49px, 8px); }
+  93.75% { transform: translate(65px, 5px); }
+  100% { transform: translate(70px, 0px); }
+}
+@keyframes malabar-luppo {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50% { transform: rotate(1.5deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  [class*="gesto-"] { animation: none !important; }
+  [class*="gesto-"],
+  [class*="malabar-"] { animation: none !important; }
 }

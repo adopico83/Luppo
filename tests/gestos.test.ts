@@ -31,7 +31,7 @@ describe("gestos de los personajes", () => {
 
   it("respeta prefers-reduced-motion quitando la animación", () => {
     expect(css).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\[class\*="gesto-"\]\s*\{\s*animation: none !important/,
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\[class\*="gesto-"\],\s*\[class\*="malabar-"\]\s*\{\s*animation: none !important/,
     );
   });
 });

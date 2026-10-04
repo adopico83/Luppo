@@ -1,14 +1,19 @@
 import { PGlite } from "@electric-sql/pglite";
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const leer = (...ruta: string[]) =>
   readFileSync(path.resolve(process.cwd(), ...ruta), "utf8");
 
 export const STUB_SQL = () => leer("tests", "helpers", "supabase-stub.sql");
+/** Todas las migraciones, en orden. */
 export const MIGRACION_SQL = () =>
-  leer("supabase", "migrations", "0001_inicial.sql");
+  readdirSync(path.resolve(process.cwd(), "supabase", "migrations"))
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .map((f) => leer("supabase", "migrations", f))
+    .join("\n");
 export const SEED_SQL = () => leer("supabase", "seed.sql");
 
 /** PGlite en memoria con el stub de Supabase, la migración real y la semilla real. */

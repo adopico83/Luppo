@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FormularioLogin } from "@/app/login/FormularioLogin";
-import { ENVIADO, LIMITE, SALUDO } from "@/app/login/textos";
+import { es } from "@/lib/i18n/es";
+
+const { "login.enviado": ENVIADO, "login.limite": LIMITE, "login.saludo": SALUDO } = es;
 
 const enviarEnlace = vi.fn();
 vi.mock("@/app/login/actions", () => ({
@@ -32,7 +34,7 @@ describe("login de Luppo", () => {
   });
 
   it("al enviar cambia el bocadillo y «Volver a enviar» espera 60 s con cuenta atrás", async () => {
-    enviarEnlace.mockResolvedValue({ ok: true, mensaje: ENVIADO });
+    enviarEnlace.mockResolvedValue({ ok: true, mensaje: "login.enviado" });
     render(<FormularioLogin />);
     await enviar();
 
@@ -50,7 +52,7 @@ describe("login de Luppo", () => {
     expect(volver().textContent).toBe("Volver a enviar");
 
     // Reenvía con el mismo correo.
-    enviarEnlace.mockResolvedValue({ ok: true, mensaje: ENVIADO });
+    enviarEnlace.mockResolvedValue({ ok: true, mensaje: "login.enviado" });
     await act(async () => {
       fireEvent.click(volver());
     });
@@ -59,7 +61,7 @@ describe("login de Luppo", () => {
   });
 
   it("si Supabase limita los intentos, Luppo pide esperar y el botón se bloquea", async () => {
-    enviarEnlace.mockResolvedValue({ ok: false, limite: true, mensaje: LIMITE });
+    enviarEnlace.mockResolvedValue({ ok: false, limite: true, mensaje: "login.limite" });
     render(<FormularioLogin />);
     await enviar();
 
@@ -72,7 +74,7 @@ describe("login de Luppo", () => {
   });
 
   it("un error normal no bloquea el botón", async () => {
-    enviarEnlace.mockResolvedValue({ ok: false, mensaje: "Escribe un email válido." });
+    enviarEnlace.mockResolvedValue({ ok: false, mensaje: "login.emailInvalido" });
     render(<FormularioLogin />);
     await enviar("x@y.z");
     expect(screen.getByRole("status").textContent).toBe("Escribe un email válido.");

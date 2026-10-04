@@ -2,9 +2,10 @@
 
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { ENVIADO, LIMITE } from "./textos";
+import type { ClaveTexto } from "@/lib/i18n";
 
-export type EstadoLogin = { ok: boolean | null; mensaje: string; limite?: boolean };
+// `mensaje` es una clave de texto: la pantalla la traduce al idioma de la familia.
+export type EstadoLogin = { ok: boolean | null; mensaje: ClaveTexto | ""; limite?: boolean };
 
 const EMAIL_VALIDO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -14,7 +15,7 @@ export async function enviarEnlace(
 ): Promise<EstadoLogin> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!EMAIL_VALIDO.test(email)) {
-    return { ok: false, mensaje: "Escribe un email válido." };
+    return { ok: false, mensaje: "login.emailInvalido" };
   }
 
   // El enlace del email debe volver a ESTA web (en local o en Vercel).
@@ -34,10 +35,8 @@ export async function enviarEnlace(
     return {
       ok: false,
       limite,
-      mensaje: limite
-        ? LIMITE
-        : "Uy, no he podido mandar la llave mágica. Inténtalo de nuevo en un momento.",
+      mensaje: limite ? "login.limite" : "login.errorEnvio",
     };
   }
-  return { ok: true, mensaje: ENVIADO };
+  return { ok: true, mensaje: "login.enviado" };
 }
