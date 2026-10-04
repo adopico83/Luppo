@@ -150,34 +150,47 @@ body {
   80% { transform: translateY(0) scale(1.04, 0.96); }
 }
 
-/* Luppo haciendo malabares en la pantalla de espera: tres bolitas giran en bucle sobre sus manos. */
-.malabar-bola {
-  transform: translateX(var(--x, 0)); /* posición fija si no hay movimiento */
-  animation: malabar-bola 1.8s linear infinite;
+/* Luppo haciendo malabares en la pantalla de espera: cascada de 3 bolitas. Cada bola sale de una
+   mano, sube en arco por encima de la cabeza y cae en la contraria; van desfasadas 1/3 del ciclo
+   (1,5 s). La X (propiedad `translate`) es lineal y la Y (`transform`) sube con ease-out y baja
+   con ease-in, que junto da una parábola. Las medidas cuelgan de --h, la altura de Luppo. */
+.malabar-escena {
+  --h: min(30dvh, 17rem);
+  --manos: calc(var(--h) * 0.38); /* distancia entre la mano izquierda y la derecha */
+  --altura: calc(var(--h) * -0.8); /* hasta dónde sube: por encima de la cabeza */
+  position: relative;
+  height: var(--h);
 }
-.malabar-bola-1 { --x: -1.8rem; animation-delay: 0s; }
-.malabar-bola-2 { --x: 0rem; animation-delay: -0.6s; }
-.malabar-bola-3 { --x: 1.8rem; animation-delay: -1.2s; }
-.malabar-luppo { animation: malabar-luppo 1.8s ease-in-out infinite; transform-origin: 50% 100%; }
+.malabar-manos { /* origen = mano izquierda; el eje X llega hasta la derecha */
+  position: absolute;
+  left: calc(var(--h) * 0.185);
+  top: calc(var(--h) * 0.6);
+  width: 0;
+  height: 0;
+}
+.malabar-bola {
+  translate: var(--x0, 0) 0; /* posición fija si no hay movimiento */
+  animation:
+    malabar-bola-x 1.5s linear infinite,
+    malabar-bola-y 1.5s infinite;
+}
+.malabar-bola-1 { --x0: 0px; animation-delay: 0s; }
+.malabar-bola-2 { --x0: var(--manos); animation-delay: -0.5s; }
+.malabar-bola-3 { --x0: calc(var(--manos) / 2); animation-delay: -1s; }
+.malabar-luppo { animation: malabar-luppo 1.5s ease-in-out infinite; transform-origin: 50% 100%; }
 
-@keyframes malabar-bola {
-  0% { transform: translate(70px, -0px); }
-  6.25% { transform: translate(65px, -21px); }
-  12.5% { transform: translate(49px, -40px); }
-  18.75% { transform: translate(27px, -52px); }
-  25% { transform: translate(0px, -56px); }
-  31.25% { transform: translate(-27px, -52px); }
-  37.5% { transform: translate(-49px, -40px); }
-  43.75% { transform: translate(-65px, -21px); }
-  50% { transform: translate(-70px, -0px); }
-  56.25% { transform: translate(-65px, 5px); }
-  62.5% { transform: translate(-49px, 8px); }
-  68.75% { transform: translate(-27px, 11px); }
-  75% { transform: translate(-0px, 12px); }
-  81.25% { transform: translate(27px, 11px); }
-  87.5% { transform: translate(49px, 8px); }
-  93.75% { transform: translate(65px, 5px); }
-  100% { transform: translate(70px, 0px); }
+/* 0-40 %: de la derecha a la izquierda · 40-50 %: en la mano · 50-90 %: de vuelta · 90-100 %: en la mano */
+@keyframes malabar-bola-x {
+  0% { translate: var(--manos) 0; }
+  40%, 50% { translate: 0px 0; }
+  90%, 100% { translate: var(--manos) 0; }
+}
+@keyframes malabar-bola-y {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(0.25, 0.6, 0.45, 1); }
+  20% { transform: translateY(var(--altura)); animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.4); }
+  40%, 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0.25, 0.6, 0.45, 1); }
+  70% { transform: translateY(var(--altura)); animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.4); }
+  90%, 100% { transform: translateY(0); }
 }
 @keyframes malabar-luppo {
   0%, 100% { transform: rotate(-1.5deg); }

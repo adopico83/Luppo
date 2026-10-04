@@ -41,11 +41,46 @@ const suave = (t) => {
 const punto = papel[0] ** 2 + papel[1] ** 2 + papel[2] ** 2;
 const SOMBRA = [35, 28, 22]; // color de la sombra translúcida
 
+// Solo es fondo lo parecido al papel que está CONECTADO con el borde del lienzo. Así los blancos
+// de dentro de Luppo (los ojos, el hocico), casi del color del papel, se quedan opacos en vez de
+// volverse agujeros por los que se ve el fondo.
+const distancia = new Float32Array(width * height);
+for (let p = 0; p < width * height; p++) {
+  const i = p * channels;
+  distancia[p] = Math.hypot(data[i] - papel[0], data[i + 1] - papel[1], data[i + 2] - papel[2]);
+}
+const esFondo = new Uint8Array(width * height);
+const pila = [];
+const sembrar = (x, y) => {
+  const p = y * width + x;
+  if (!esFondo[p] && distancia[p] < HASTA) {
+    esFondo[p] = 1;
+    pila.push(p);
+  }
+};
+for (let x = 0; x < width; x++) {
+  sembrar(x, 0);
+  sembrar(x, height - 1);
+}
+for (let y = 0; y < height; y++) {
+  sembrar(0, y);
+  sembrar(width - 1, y);
+}
+while (pila.length) {
+  const p = pila.pop();
+  const x = p % width;
+  const y = (p - x) / width;
+  if (x > 0) sembrar(x - 1, y);
+  if (x < width - 1) sembrar(x + 1, y);
+  if (y > 0) sembrar(x, y - 1);
+  if (y < height - 1) sembrar(x, y + 1);
+}
+
 for (let p = 0; p < width * height; p++) {
   const i = p * channels;
   const r = data[i], g = data[i + 1], b = data[i + 2];
-  const d = Math.hypot(r - papel[0], g - papel[1], b - papel[2]);
-  const alfaRecorte = suave((d - DESDE) / (HASTA - DESDE));
+  const d = distancia[p];
+  const alfaRecorte = esFondo[p] ? suave((d - DESDE) / (HASTA - DESDE)) : 1;
 
   // ¿Es solo papel más oscuro (sin color propio)? Entonces es sombra: negro translúcido.
   // k = cuánto más oscuro que el papel; resto = lo que se aleja del tono del papel.

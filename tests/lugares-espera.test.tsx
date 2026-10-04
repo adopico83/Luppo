@@ -1,8 +1,10 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { act, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CasaLuppo } from "@/components/CasaLuppo";
 import { PantallaEspera } from "@/components/PantallaEspera";
-import { LUGARES, esLugar } from "@/lib/catalogo/lugares";
+import { LUGARES, esLugar, fondoDeLugar } from "@/lib/catalogo/lugares";
 import { t } from "@/lib/i18n";
 import LugaresPage from "@/app/lugares/page";
 import EsperaPage from "@/app/espera/page";
@@ -25,28 +27,36 @@ beforeEach(() => {
 });
 
 describe("catálogo de lugares", () => {
-  it("tiene los 5 lugares con nombre en los dos idiomas", () => {
+  it("tiene los 8 lugares, con fondo ilustrado y nombre en los dos idiomas", () => {
     expect(LUGARES.map((l) => l.clave)).toEqual([
-      "bosque", "playa", "espacio", "castillo", "fondo_del_mar",
+      "bosque", "playa", "espacio", "castillo", "fondo-mar", "futbol", "patinete", "atracciones",
     ]);
-    for (const { clave } of LUGARES) {
+    for (const { clave, fondo } of LUGARES) {
+      expect(fondo).toBe(`/lugares/${clave}.webp`);
+      expect(existsSync(join(process.cwd(), "public", fondo))).toBe(true);
       expect(t(`lugar.${clave}`, "es")).not.toMatch(/^lugar\./);
       expect(t(`lugar.${clave}`, "eu")).not.toMatch(/^lugar\./);
     }
+    expect(t("lugar.fondo-mar", "es")).toBe("Fondo del mar");
+    expect(t("lugar.futbol", "es")).toBe("Campo de fútbol");
     expect(esLugar("playa")).toBe(true);
     expect(esLugar("volcan")).toBe(false);
+    expect(fondoDeLugar("castillo")).toBe("/lugares/castillo.webp");
   });
 });
 
 describe("pantalla de lugares", () => {
-  it("enseña una tarjeta grande por lugar, que lleva a la espera con personajes y lugar", async () => {
+  it("enseña una tarjeta por lugar con su ilustración y nombre, que lleva a la espera", async () => {
     render(await LugaresPage({ searchParams: params({ personajes: "flan,luna" }) }));
     expect(screen.getByRole("heading", { name: "¿Dónde pasa el cuento?" })).toBeTruthy();
     const lista = within(screen.getByRole("list"));
-    expect(lista.getAllByRole("link")).toHaveLength(5);
-    const playa = lista.getByRole("link", { name: /La playa/ });
+    expect(lista.getAllByRole("link")).toHaveLength(8);
+    const playa = lista.getByRole("link", { name: "Playa" });
     expect(playa.getAttribute("href")).toBe("/espera?personajes=flan,luna&lugar=playa");
-    expect(playa.className).toContain("min-h-[160px]");
+    expect(playa.className).toContain("min-h-[120px]");
+    expect(playa.querySelector("img")?.getAttribute("src")).toContain("playa.webp");
+    expect(playa.textContent).toBe("Playa");
+    expect(lista.getByRole("link", { name: "Parque de atracciones" })).toBeTruthy();
   });
 
   it("tiene botón Volver al carrusel", async () => {

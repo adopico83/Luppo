@@ -37,11 +37,14 @@ export const es = {
   // Lugares
   "lugares.titulo": "¿Dónde pasa el cuento?",
   "lugares.volver": "Volver",
-  "lugar.bosque": "El bosque",
-  "lugar.playa": "La playa",
-  "lugar.espacio": "El espacio",
-  "lugar.castillo": "El castillo",
-  "lugar.fondo_del_mar": "El fondo del mar",
+  "lugar.bosque": "Bosque",
+  "lugar.playa": "Playa",
+  "lugar.espacio": "Espacio",
+  "lugar.castillo": "Castillo",
+  "lugar.fondo-mar": "Fondo del mar",
+  "lugar.futbol": "Campo de fútbol",
+  "lugar.patinete": "Paseo en patinete",
+  "lugar.atracciones": "Parque de atracciones",
 
   // Espera
   "espera.titulo": "Luppo está preparando tu cuento",

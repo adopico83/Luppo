@@ -11,7 +11,7 @@ export const ESPERA_SIMULADA_MS = 4000;
 
 const FRASES = ["espera.frase1", "espera.frase2", "espera.frase3", "espera.frase4"] as const;
 
-// Luppo hace malabares con tres bolitas mientras se «piensa» el cuento. El malabarismo es solo
+// Luppo hace malabares con tres bolitas (cascada de una mano a la otra) mientras se «piensa» el cuento. El malabarismo es solo
 // CSS (globals.css) y prefers-reduced-motion lo deja quieto; las frases cambian igualmente.
 export function PantallaEspera() {
   const t = useT();
@@ -39,18 +39,18 @@ export function PantallaEspera() {
       <div className="relative flex w-full max-w-md flex-col items-center gap-4 px-4 py-6">
         <h1 className="sr-only">{t("espera.titulo")}</h1>
 
-        <div className="relative flex flex-col items-center pt-24">
-          <div aria-hidden="true" className="absolute left-1/2 top-[5.5rem] h-0 w-0">
-            <span className="malabar-bola malabar-bola-1 absolute -ml-4 -mt-4 h-8 w-8 rounded-full bg-salvia shadow" />
-            <span className="malabar-bola malabar-bola-2 absolute -ml-4 -mt-4 h-8 w-8 rounded-full bg-ocre shadow" />
-            <span className="malabar-bola malabar-bola-3 absolute -ml-4 -mt-4 h-8 w-8 rounded-full bg-rosa shadow" />
-          </div>
+        <div className="malabar-escena mt-24">
           {/* eslint-disable-next-line @next/next/no-img-element -- imagen estática ya optimizada */}
           <img
             src="/fondos/luppo-login.webp"
             alt="Luppo"
-            className="malabar-luppo h-[min(30dvh,17rem)] w-auto max-w-full"
+            className="malabar-luppo h-full w-auto max-w-full"
           />
+          <div aria-hidden="true" className="malabar-manos">
+            <span className="malabar-bola malabar-bola-1 absolute -ml-4 -mt-4 h-8 w-8 rounded-full bg-salvia shadow" />
+            <span className="malabar-bola malabar-bola-2 absolute -ml-4 -mt-4 h-8 w-8 rounded-full bg-ocre shadow" />
+            <span className="malabar-bola malabar-bola-3 absolute -ml-4 -mt-4 h-8 w-8 rounded-full bg-rosa shadow" />
+          </div>
         </div>
 
         <p
