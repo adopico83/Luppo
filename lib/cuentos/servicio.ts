@@ -75,13 +75,13 @@ export async function crearCuento(
 
   try {
     const texto = await deps.generarTexto({ personajes, lugar, idioma, edad: perfil.edad });
-    const escenas = await guardarEscenas(supabase, cuentoId, texto, lugar);
+    const locuciones = await guardarEscenas(supabase, cuentoId, texto, lugar);
 
     const { caracteres, modeloVoz } = await sintetizarEscenas(
       supabase,
       deps,
       { familiaId, perfilId: perfil.id, cuentoId },
-      escenas,
+      locuciones,
     );
 
     const uso = {
@@ -94,6 +94,7 @@ export async function crearCuento(
       .from("cuentos")
       .update({
         titulo: texto.cuento.titulo,
+        tema_educativo: texto.cuento.tema_educativo,
         json_original: texto.json,
         modelo: texto.modelo,
         version_prompt: texto.version,
@@ -198,37 +199,122 @@ async function fichasDe(supabase: SupabaseClient, claves: string[]) {
   return fichas;
 }
 
-type EscenaGuardada = { id: string; clave: string; texto: string };
+// Cada audio pendiente: qué texto se dice, dónde se guarda y qué fila apunta a él.
+type Locucion = {
+  clave: string;
+  texto: string;
+  tabla: "escenas" | "decisiones";
+  id: string;
+  campoRuta: "audio_path" | "pregunta_audio_path";
+  guardaDuracion: boolean;
+};
 
 async function guardarEscenas(
   supabase: SupabaseClient,
   cuentoId: string,
   { cuento }: ResultadoTexto,
   lugar: ClaveLugar,
-): Promise<EscenaGuardada[]> {
-  const filas = cuento.escenas.map((escena, i) => ({
-    cuento_id: cuentoId,
-    clave: `escena-${i + 1}`,
-    orden: i + 1,
-    tipo: i === cuento.escenas.length - 1 ? "final" : "narracion",
-    habla: "narrador",
-    texto: escena.texto,
-    acciones: escena.personajes,
-    fondo_clave: lugar,
-  }));
+): Promise<Locucion[]> {
+  const total = cuento.escenas.length;
+  const filas = cuento.escenas.map((escena, i) => {
+    const inter = escena.interaccion;
+    return {
+      cuento_id: cuentoId,
+      clave: `escena-${i + 1}`,
+      orden: i + 1,
+      tipo: inter ? "decision" : i === total - 1 ? "final" : "narracion",
+      interaccion: inter?.tipo ?? null,
+      pregunta: inter ? (inter.tipo === "elegir" ? inter.pregunta : inter.instruccion) : null,
+      interaccion_datos: inter?.tipo === "contar" ? { hasta: inter.hasta } : {},
+      habla: "narrador",
+      texto: escena.texto,
+      acciones: escena.personajes,
+      fondo_clave: lugar,
+    };
+  });
   const { data, error } = await supabase.from("escenas").insert(filas).select("id, clave, texto, orden");
   if (error || !data) throw new Error(`No se pudieron guardar las escenas: ${error?.message}`);
-  return [...data].sort((a, b) => a.orden - b.orden) as EscenaGuardada[];
+  const guardadas = [...data].sort((a, b) => a.orden - b.orden) as { id: string; clave: string; texto: string }[];
+
+  const locuciones: Locucion[] = guardadas.map((e) => ({
+    clave: e.clave,
+    texto: e.texto,
+    tabla: "escenas",
+    id: e.id,
+    campoRuta: "audio_path",
+    guardaDuracion: true,
+  }));
+
+  // Opciones de las interacciones: «elegir» una fila por opción; «tocar» y «contar», una con la consecuencia.
+  const opciones = cuento.escenas.flatMap((escena, i) => {
+    const inter = escena.interaccion;
+    if (!inter) return [];
+    const destino = `escena-${i + 2}`;
+    const base = { escena_id: guardadas[i].id, destino_clave: destino };
+    const filasOpcion =
+      inter.tipo === "elegir"
+        ? inter.opciones.map((o) => ({ etiqueta: o.texto, icono_clave: o.emoji, consecuencia: o.consecuencia }))
+        : inter.tipo === "tocar"
+          ? [{ etiqueta: inter.instruccion, icono_clave: inter.emoji, consecuencia: inter.consecuencia }]
+          : [{ etiqueta: String(inter.hasta), icono_clave: "🔢", consecuencia: inter.consecuencia }];
+    return filasOpcion.map((o, n) => ({ ...base, ...o, orden: n + 1, escenaClave: guardadas[i].clave }));
+  });
+  if (opciones.length > 0) {
+    const { data: filasDecision, error: errorDecision } = await supabase
+      .from("decisiones")
+      .insert(
+        opciones.map((o) => ({
+          escena_id: o.escena_id,
+          orden: o.orden,
+          etiqueta: o.etiqueta,
+          icono_clave: o.icono_clave,
+          destino_clave: o.destino_clave,
+          consecuencia: o.consecuencia,
+        })),
+      )
+      .select("id, escena_id, orden");
+    if (errorDecision || !filasDecision) {
+      throw new Error(`No se pudieron guardar las decisiones: ${errorDecision?.message}`);
+    }
+    for (const o of opciones) {
+      const fila = filasDecision.find((d) => d.escena_id === o.escena_id && d.orden === o.orden);
+      if (!fila) continue;
+      locuciones.push({
+        clave: `${o.escenaClave}-opcion-${o.orden}`,
+        texto: o.consecuencia,
+        tabla: "decisiones",
+        id: fila.id as string,
+        campoRuta: "audio_path",
+        guardaDuracion: false,
+      });
+    }
+  }
+
+  // La pregunta de cada escena interactiva suena después del texto de la escena.
+  cuento.escenas.forEach((escena, i) => {
+    const inter = escena.interaccion;
+    if (!inter) return;
+    locuciones.push({
+      clave: `${guardadas[i].clave}-pregunta`,
+      texto: inter.tipo === "elegir" ? inter.pregunta : inter.instruccion,
+      tabla: "escenas",
+      id: guardadas[i].id,
+      campoRuta: "pregunta_audio_path",
+      guardaDuracion: false,
+    });
+  });
+  return locuciones;
 }
 
-// Un audio por escena, de dos en dos. Si la voz no está configurada o una escena falla, el cuento
+// Un audio por escena, más el de cada pregunta y cada consecuencia, todos a la vez (de dos en dos)
+// para no esperar. Si la voz no está configurada o una escena falla, el cuento
 // se queda con texto en esa escena (el lector oculta el botón de voz). Si el audio ya existe en
 // Storage no se vuelve a pagar. Devuelve los caracteres enviados a ElevenLabs con éxito.
 async function sintetizarEscenas(
   supabase: SupabaseClient,
   deps: Dependencias,
   ids: { familiaId: string; perfilId: string; cuentoId: string },
-  escenas: EscenaGuardada[],
+  locuciones: Locucion[],
 ): Promise<{ caracteres: number; modeloVoz: string | null }> {
   const voz = deps.voz;
   if (!voz) {
@@ -237,7 +323,7 @@ async function sintetizarEscenas(
   }
 
   let caracteres = 0;
-  const pendientes = [...escenas];
+  const pendientes = [...locuciones];
   const trabajador = async () => {
     for (let escena = pendientes.shift(); escena; escena = pendientes.shift()) {
       try {
@@ -250,8 +336,8 @@ async function sintetizarEscenas(
           audioMs = duracionEstimadaMs(audio);
         }
         const { error } = await supabase
-          .from("escenas")
-          .update({ audio_path: ruta, audio_ms: audioMs })
+          .from(escena.tabla)
+          .update({ [escena.campoRuta]: ruta, ...(escena.guardaDuracion ? { audio_ms: audioMs } : {}) })
           .eq("id", escena.id);
         if (error) throw new Error(error.message);
       } catch (error) {

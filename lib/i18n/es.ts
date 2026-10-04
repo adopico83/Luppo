@@ -63,6 +63,8 @@ export const es = {
   "cuento.repetir": "Repetir voz",
   "cuento.siguiente": "Siguiente",
   "cuento.fin": "Fin",
+  "cuento.contado": "¡Ya lo hemos contado!",
+  "cuento.tocar": "Toca aquí",
 } as const;
 
 export type ClaveTexto = keyof typeof es;

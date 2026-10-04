@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { modeloTexto } from "./config";
 import { construirPrompt, type EntradaPrompt } from "./prompt";
-import { CuentoGeneradoSchema, JSON_SCHEMA_CUENTO, type CuentoGenerado } from "./schema";
+import { CuentoGeneradoSchema, JSON_SCHEMA_CUENTO, detalleError, type CuentoGenerado } from "./schema";
 
 export class ErrorGeneracion extends Error {
   constructor(mensaje: string, options?: { cause?: unknown }) {
@@ -23,7 +23,7 @@ export type ResultadoTexto = {
 };
 
 const MAX_TOKENS = 4000;
-const INTENTOS = 2; // un reintento si la salida no cumple el esquema
+const INTENTOS = 3; // hasta dos reintentos si la salida no cumple el esquema
 
 export function crearClienteTexto(): ClienteTexto {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -42,6 +42,7 @@ export async function generarTextoCuento(
   let tokensEntrada = 0;
   let tokensSalida = 0;
   let ultimoError: unknown;
+  const mensajes: Anthropic.MessageParam[] = [{ role: "user", content: user }];
 
   for (let intento = 0; intento < INTENTOS; intento++) {
     let respuesta;
@@ -50,7 +51,7 @@ export async function generarTextoCuento(
         model: modelo,
         max_tokens: MAX_TOKENS,
         system,
-        messages: [{ role: "user", content: user }],
+        messages: [...mensajes],
         tools: [
           {
             name: "entregar_cuento",
@@ -68,18 +69,33 @@ export async function generarTextoCuento(
     tokensSalida += respuesta.usage?.output_tokens ?? 0;
 
     const bloque = respuesta.content.find((b) => b.type === "tool_use");
-    const analisis = CuentoGeneradoSchema.safeParse(bloque && "input" in bloque ? bloque.input : null);
+    const entregado = bloque && "input" in bloque ? bloque.input : null;
+    const analisis = CuentoGeneradoSchema.safeParse(entregado);
     if (analisis.success) {
       return {
         cuento: analisis.data,
-        json: bloque && "input" in bloque ? bloque.input : null,
+        json: entregado,
         modelo,
         version,
         tokensEntrada,
         tokensSalida,
       };
     }
+
     ultimoError = analisis.error;
+    const detalle = detalleError(analisis.error);
+    console.error(`[cuentos] salida no válida (intento ${intento + 1}/${INTENTOS}):\n${detalle}`);
+
+    // El siguiente intento ve su respuesta anterior y qué falló, para corregirlo.
+    const aviso = `El cuento no cumple el esquema. Corrige estos problemas y vuelve a entregarlo completo:\n${detalle}`;
+    mensajes.push({ role: "assistant", content: respuesta.content });
+    mensajes.push({
+      role: "user",
+      content:
+        bloque?.type === "tool_use"
+          ? [{ type: "tool_result", tool_use_id: bloque.id, is_error: true, content: aviso }]
+          : aviso,
+    });
   }
   throw new ErrorGeneracion("El modelo no devolvió un cuento válido", { cause: ultimoError });
 }

@@ -13,6 +13,8 @@ const notFound = vi.fn(() => {
 const idioma = vi.fn(async () => "es");
 vi.mock("next/navigation", () => ({ useRouter: () => ({}), notFound: () => notFound() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => crearSupabaseFalso().client }));
+const registrarDecision = vi.fn<(id: string) => Promise<void>>(async () => {});
+vi.mock("@/app/cuento/actions", () => ({ registrarDecision: (id: string) => registrarDecision(id) }));
 vi.mock("@/lib/i18n/servidor", () => ({ idiomaDeFamilia: () => idioma() }));
 
 import CuentoPage from "@/app/cuento/[id]/page";
@@ -29,9 +31,10 @@ const cuento: CuentoLectura = {
       texto: "Primera escena.",
       audioUrl: "https://storage.test/1.mp3?token=a",
       acciones: [{ personaje: "luna", posicion: "derecha", gesto: "saludo-pillo", accion: "entrar" }],
+      interaccion: null,
     },
-    { texto: "Segunda escena.", audioUrl: null, acciones: [] },
-    { texto: "Última escena.", audioUrl: "https://storage.test/3.mp3?token=c", acciones: [] },
+    { texto: "Segunda escena.", audioUrl: null, acciones: [], interaccion: null },
+    { texto: "Última escena.", audioUrl: "https://storage.test/3.mp3?token=c", acciones: [], interaccion: null },
   ],
 };
 
@@ -192,6 +195,118 @@ describe("LectorCuento", () => {
   });
 });
 
+describe("escenas interactivas", () => {
+  const opcion = (id: string, texto: string, icono: string, consecuencia: string, audioUrl: string | null = null) => ({
+    id, texto, icono, consecuencia, audioUrl,
+  });
+  const interactivo = (interaccion: NonNullable<CuentoLectura["escenas"][number]["interaccion"]>): CuentoLectura => ({
+    ...cuento,
+    personajes: [
+      { clave: "zumbillo", nombre: "Zumbillo" },
+      { clave: "luppo", nombre: "Luppo" },
+    ],
+    escenas: [
+      { texto: "Empieza el partido.", audioUrl: null, acciones: [], interaccion: null },
+      { texto: "El balón rueda.", audioUrl: "https://storage.test/2.mp3", acciones: [], interaccion },
+      { texto: "Fin del partido.", audioUrl: null, acciones: [], interaccion: null },
+    ],
+  });
+  const elegir = interactivo({
+    tipo: "elegir",
+    pregunta: "¿Chutamos o pasamos?",
+    preguntaAudioUrl: "https://storage.test/2-pregunta.mp3",
+    hasta: null,
+    opciones: [
+      opcion("d1", "Chutar", "⚽", "¡Gooool!", "https://storage.test/2-op1.mp3"),
+      opcion("d2", "Pasar", "🤝", "¡Buen pase!"),
+    ],
+  });
+  const llegarALaEscena2 = () => fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+  beforeEach(() => registrarDecision.mockClear());
+
+  it("se para en la pregunta: botones grandes con emoji y sin «Siguiente» hasta responder", () => {
+    render(<LectorCuento cuento={elegir} />);
+    llegarALaEscena2();
+    expect(screen.getByText("El balón rueda.")).toBeTruthy();
+    expect(screen.getByTestId("pregunta").textContent).toBe("¿Chutamos o pasamos?");
+    expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
+    const chutar = screen.getByRole("button", { name: "Chutar" });
+    expect(chutar.className).toContain("min-h-[150px]");
+    expect(chutar.textContent).toContain("⚽");
+    expect(screen.getByRole("button", { name: "Pasar" })).toBeTruthy();
+    expect(screen.queryByTestId("celebracion")).toBeNull();
+  });
+
+  it("la voz lee el texto y luego la pregunta, y se para sin avanzar", () => {
+    const { container } = render(<LectorCuento cuento={elegir} />);
+    llegarALaEscena2();
+    const audio = () => container.querySelector("audio")!;
+    expect(audio().getAttribute("src")).toBe("https://storage.test/2.mp3");
+    act(() => void audio().dispatchEvent(new Event("ended")));
+    expect(audio().getAttribute("src")).toBe("https://storage.test/2-pregunta.mp3");
+    expect(play).toHaveBeenCalledTimes(2);
+    act(() => void audio().dispatchEvent(new Event("ended")));
+    expect(screen.getByTestId("pregunta").textContent).toBe("¿Chutamos o pasamos?");
+    expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Chutar" }).className).toContain("ring-8");
+  });
+
+  it("al elegir se lee la consecuencia, Luppo celebra, se guarda la decisión y se puede continuar", () => {
+    const { container } = render(<LectorCuento cuento={elegir} />);
+    llegarALaEscena2();
+    fireEvent.click(screen.getByRole("button", { name: "Chutar" }));
+    expect(registrarDecision).toHaveBeenCalledWith("d1");
+    expect(screen.getByTestId("pregunta").textContent).toBe("¡Gooool!");
+    expect(container.querySelector("audio")!.getAttribute("src")).toBe("https://storage.test/2-op1.mp3");
+    expect(screen.getByTestId("celebracion")).toBeTruthy();
+    expect(screen.getByTestId("personaje-luppo").querySelector(".mover-saltar")).not.toBeNull();
+    expect(screen.getByTestId("personaje-zumbillo").querySelector("[class*=mover-]")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Chutar" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    expect(screen.getByText("Fin del partido.")).toBeTruthy();
+    expect(screen.queryByTestId("celebracion")).toBeNull();
+  });
+
+  it("una consecuencia sin voz deja continuar enseguida", () => {
+    render(<LectorCuento cuento={elegir} />);
+    llegarALaEscena2();
+    fireEvent.click(screen.getByRole("button", { name: "Pasar" }));
+    expect(screen.getByTestId("pregunta").textContent).toBe("¡Buen pase!");
+    expect(screen.getByRole("button", { name: "Siguiente" })).toBeTruthy();
+  });
+
+  it("tocar: un solo botón grande con el elemento; contar: un botón para avanzar", () => {
+    const { unmount } = render(
+      <LectorCuento
+        cuento={interactivo({
+          tipo: "tocar", pregunta: "¡Toca el balón para chutar!", preguntaAudioUrl: null, hasta: null,
+          opciones: [opcion("t1", "¡Toca el balón para chutar!", "⚽", "¡Golazo!")],
+        })}
+      />,
+    );
+    llegarALaEscena2();
+    fireEvent.click(screen.getByRole("button", { name: "¡Toca el balón para chutar!" }));
+    expect(registrarDecision).toHaveBeenCalledWith("t1");
+    expect(screen.getByTestId("pregunta").textContent).toBe("¡Golazo!");
+    unmount();
+
+    render(
+      <LectorCuento
+        cuento={interactivo({
+          tipo: "contar", pregunta: "Contemos hasta 5", preguntaAudioUrl: null, hasta: 5,
+          opciones: [opcion("c1", "5", "🔢", "¡Cinco!")],
+        })}
+      />,
+    );
+    llegarALaEscena2();
+    expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Contemos hasta 5" }));
+    expect(screen.getByTestId("pregunta").textContent).toBe("¡Cinco!");
+  });
+});
+
 describe("cargar el cuento guardado", () => {
   const ID = "11111111-1111-4111-8111-111111111111";
   const datos = () =>
@@ -230,10 +345,43 @@ describe("cargar el cuento guardado", () => {
           texto: "Uno",
           audioUrl: "https://storage.test/f/p/c/escena-1.mp3?token=firmado",
           acciones: [{ personaje: "zumbillo", posicion: "centro", gesto: "revoloteo" }],
+          interaccion: null,
         },
-        { texto: "Dos", audioUrl: null, acciones: [] },
+        { texto: "Dos", audioUrl: null, acciones: [], interaccion: null },
       ],
     });
+  });
+
+  it("carga las interacciones con sus opciones, sus voces firmadas y el número a contar", async () => {
+    const { client, base } = datos();
+    base.tablas.escenas[0] = {
+      id: "e2", cuento_id: ID, orden: 2, texto: "Dos", audio_path: "f/p/c/escena-2.mp3",
+      interaccion: "elegir", pregunta: "¿Chutamos o pasamos?", pregunta_audio_path: "f/p/c/escena-2-pregunta.mp3", interaccion_datos: {},
+    };
+    base.tablas.decisiones = [
+      { id: "d2", escena_id: "e2", orden: 2, etiqueta: "Pasar", icono_clave: "🤝", consecuencia: "¡Buen pase!", audio_path: null },
+      { id: "d1", escena_id: "e2", orden: 1, etiqueta: "Chutar", icono_clave: "⚽", consecuencia: "¡Gooool!", audio_path: "f/p/c/escena-2-opcion-1.mp3" },
+    ];
+    const r = await cargarCuento(client, ID);
+    expect(r!.escenas[1].interaccion).toEqual({
+      tipo: "elegir",
+      pregunta: "¿Chutamos o pasamos?",
+      preguntaAudioUrl: "https://storage.test/f/p/c/escena-2-pregunta.mp3?token=firmado",
+      hasta: null,
+      opciones: [
+        { id: "d1", texto: "Chutar", icono: "⚽", consecuencia: "¡Gooool!", audioUrl: "https://storage.test/f/p/c/escena-2-opcion-1.mp3?token=firmado" },
+        { id: "d2", texto: "Pasar", icono: "🤝", consecuencia: "¡Buen pase!", audioUrl: null },
+      ],
+    });
+    base.tablas.escenas[0].interaccion = "contar";
+    base.tablas.escenas[0].interaccion_datos = { hasta: 5 };
+    expect((await cargarCuento(client, ID))!.escenas[1].interaccion?.hasta).toBe(5);
+  });
+
+  it("una interacción sin opciones se lee como narración normal", async () => {
+    const { client, base } = datos();
+    Object.assign(base.tablas.escenas[0], { id: "e2", interaccion: "tocar", pregunta: "¡Toca!" });
+    expect((await cargarCuento(client, ID))!.escenas[1].interaccion).toBeNull();
   });
 
   it("null si el id no es un uuid, no existe o aún no está listo", async () => {

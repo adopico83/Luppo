@@ -66,5 +66,7 @@ export const eu: Record<ClaveTexto, string> = {
   "cuento.repetir": "Errepikatu ahotsa",
   "cuento.siguiente": "Hurrengoa",
   "cuento.fin": "Amaiera",
+  "cuento.contado": "Kontatu dugu!",
+  "cuento.tocar": "Ukitu hemen",
 
 };
