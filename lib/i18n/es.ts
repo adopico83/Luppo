@@ -59,8 +59,8 @@ export const es = {
   // Cuento
   "cuento.personajes": "Personajes del cuento",
   "cuento.escena": "Escena {n} de {total}",
-  "cuento.escuchar": "Escuchar",
   "cuento.pausar": "Pausar",
+  "cuento.repetir": "Repetir voz",
   "cuento.siguiente": "Siguiente",
   "cuento.fin": "Fin",
 } as const;

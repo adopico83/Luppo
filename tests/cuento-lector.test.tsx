@@ -25,9 +25,13 @@ const cuento: CuentoLectura = {
     { clave: "luna", nombre: "Luna" },
   ],
   escenas: [
-    { texto: "Primera escena.", audioUrl: "https://storage.test/1.mp3?token=a" },
-    { texto: "Segunda escena.", audioUrl: null },
-    { texto: "Última escena.", audioUrl: "https://storage.test/3.mp3?token=c" },
+    {
+      texto: "Primera escena.",
+      audioUrl: "https://storage.test/1.mp3?token=a",
+      acciones: [{ personaje: "luna", posicion: "derecha", gesto: "saludo-pillo", accion: "entrar" }],
+    },
+    { texto: "Segunda escena.", audioUrl: null, acciones: [] },
+    { texto: "Última escena.", audioUrl: "https://storage.test/3.mp3?token=c", acciones: [] },
   ],
 };
 
@@ -41,32 +45,65 @@ const pause = vi.fn(function (this: HTMLMediaElement) {
   this.dispatchEvent(new Event("pause"));
 });
 beforeEach(() => {
-  play.mockClear();
+  play.mockReset();
+  play.mockImplementation(function (this: HTMLMediaElement) {
+    Object.defineProperty(this, "paused", { value: false, configurable: true });
+    this.dispatchEvent(new Event("play"));
+    return Promise.resolve();
+  });
   pause.mockClear();
   notFound.mockClear();
   Object.defineProperty(HTMLMediaElement.prototype, "play", { value: play, configurable: true });
   Object.defineProperty(HTMLMediaElement.prototype, "pause", { value: pause, configurable: true });
 });
 
+const srcFondo = () =>
+  decodeURIComponent(screen.getByTestId("fondo-lugar").querySelector("img")!.getAttribute("src")!);
+
 describe("LectorCuento", () => {
-  it("pone de fondo el lugar con el fondo suave de Luppo encima", () => {
+  it("pone de fondo el lugar (nítido, a 100vw) con el fondo suave de Luppo encima", () => {
     render(<LectorCuento cuento={cuento} />);
     const lugar = screen.getByTestId("fondo-lugar");
-    expect(lugar.getAttribute("style")).toContain("/lugares/playa.webp");
+    const imagen = lugar.querySelector("img")!;
+    expect(srcFondo()).toContain("/lugares/playa.webp");
+    expect(imagen.getAttribute("sizes")).toBe("100vw");
     expect(lugar.getAttribute("aria-hidden")).toBe("true");
     const fondo = screen.getByTestId("fondo-luppo");
     expect(lugar.compareDocumentPosition(fondo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("enseña los personajes elegidos con su gesto en cada escena", () => {
+  it("pone a los personajes sobre el fondo, de cuerpo entero y sin marco, con su gesto", () => {
     render(<LectorCuento cuento={cuento} />);
     const lista = screen.getByRole("list", { name: "Personajes del cuento" });
-    const gestos = Array.from(lista.querySelectorAll("img, [role=img]")).map((e) => e.className);
-    expect(gestos).toHaveLength(2);
-    expect(gestos[0]).toContain("gesto-revoloteo"); // Zumbillo
-    expect(gestos[1]).toContain("gesto-hamaca"); // Luna
+    const imgs = Array.from(lista.querySelectorAll("img")) as HTMLImageElement[];
+    expect(imgs.map((i) => i.getAttribute("src"))).toEqual(["/recortes/zumbillo.webp", "/recortes/luna.webp"]);
+    expect(imgs.every((i) => i.className.includes("object-contain") && !i.className.includes("rounded"))).toBe(true);
+    expect(imgs[0].className).toContain("gesto-revoloteo"); // Zumbillo: su gesto propio
+    expect(imgs[1].className).toContain("gesto-saludo-pillo"); // Luna: el que pide la escena
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-    expect(screen.getByRole("list", { name: "Personajes del cuento" }).querySelectorAll("img, [role=img]")).toHaveLength(2);
+    expect(screen.getByRole("list", { name: "Personajes del cuento" }).querySelectorAll("img")).toHaveLength(2);
+  });
+
+  it("aplica la posición y la acción de la escena; sin acción no hay movimiento", () => {
+    render(<LectorCuento cuento={cuento} />);
+    const luna = screen.getByTestId("personaje-luna");
+    expect(luna.style.left).toBe("80%");
+    expect(luna.style.getPropertyValue("--lado")).toBe("1");
+    expect(luna.querySelector(".mover-entrar")).not.toBeNull();
+    expect(screen.getByTestId("personaje-zumbillo").querySelector("[class*=mover-]")).toBeNull();
+  });
+
+  it("en el patinete avanza un personaje por el camino", () => {
+    render(<LectorCuento cuento={{ ...cuento, lugar: "patinete" }} />);
+    expect(screen.getByTestId("personaje-zumbillo").querySelector(".mover-patinete")).not.toBeNull();
+    expect(screen.getByTestId("personaje-luna").querySelector(".mover-patinete")).toBeNull();
+  });
+
+  it("el texto va en una franja pequeña: text-lg en móvil y text-xl en escritorio", () => {
+    render(<LectorCuento cuento={cuento} />);
+    const texto = screen.getByText("Primera escena.");
+    expect(texto.className).toContain("text-lg");
+    expect(texto.className).toContain("md:text-xl");
   });
 
   it("muestra las escenas de una en una con botón gigante «Siguiente» y acaba en «Fin»", () => {
@@ -87,37 +124,59 @@ describe("LectorCuento", () => {
     expect(screen.getByRole("link", { name: "Fin" }).getAttribute("href")).toBe("/");
   });
 
-  it("reproduce y pausa la voz de la escena; sin audio no hay botón", () => {
+  it("la voz suena sola al entrar en la escena; sin audio no hay botón de voz", () => {
     const { container } = render(<LectorCuento cuento={cuento} />);
     expect(container.querySelector("audio")?.getAttribute("src")).toBe("https://storage.test/1.mp3?token=a");
-
-    fireEvent.click(screen.getByRole("button", { name: "Escuchar" }));
     expect(play).toHaveBeenCalledTimes(1);
-    const pausar = screen.getByRole("button", { name: "Pausar" });
-    expect(pausar.getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(pausar);
-    expect(pause).toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Escuchar" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Pausar" }).getAttribute("aria-pressed")).toBe("true");
 
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
     expect(container.querySelector("audio")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Escuchar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Repetir voz" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Pausar" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    expect(play).toHaveBeenCalledTimes(2); // la tercera escena también arranca sola
   });
 
-  it("al pasar de escena se para la voz y el botón vuelve a «Escuchar»", () => {
+  it("si el navegador bloquea el autoplay, suena con el primer toque", async () => {
+    play.mockImplementationOnce(() => Promise.reject(new DOMException("bloqueado", "NotAllowedError")));
     render(<LectorCuento cuento={cuento} />);
-    fireEvent.click(screen.getByRole("button", { name: "Escuchar" }));
+    await act(async () => {});
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Repetir voz" })).toBeTruthy();
+
+    await act(async () => void fireEvent.pointerDown(window));
+    expect(play).toHaveBeenCalledTimes(2);
     expect(screen.getByRole("button", { name: "Pausar" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-    expect(screen.getByRole("button", { name: "Escuchar" })).toBeTruthy();
   });
 
-  it("al terminar la voz vuelve a «Escuchar»", () => {
+  it("se puede pausar y repetir la voz desde el principio", () => {
     const { container } = render(<LectorCuento cuento={cuento} />);
-    fireEvent.click(screen.getByRole("button", { name: "Escuchar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pausar" }));
+    expect(pause).toHaveBeenCalled();
+    container.querySelector("audio")!.currentTime = 5;
+    fireEvent.click(screen.getByRole("button", { name: "Repetir voz" }));
+    expect(container.querySelector("audio")!.currentTime).toBe(0);
+    expect(play).toHaveBeenCalledTimes(2);
+  });
+
+  it("al pasar de escena se para la voz", () => {
+    render(<LectorCuento cuento={cuento} />);
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    expect(pause).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Pausar" })).toBeNull();
+  });
+
+  it("al terminar la voz «Siguiente» se resalta, y al repetirla deja de estarlo", () => {
+    const { container } = render(<LectorCuento cuento={cuento} />);
+    const siguiente = () => screen.getByRole("button", { name: "Siguiente" });
+    expect(siguiente().getAttribute("data-resaltado")).toBe("false");
     act(() => void container.querySelector("audio")!.dispatchEvent(new Event("ended")));
-    expect(screen.getByRole("button", { name: "Escuchar" })).toBeTruthy();
+    expect(siguiente().getAttribute("data-resaltado")).toBe("true");
+    expect(siguiente().className).toContain("ring-8");
+    fireEvent.click(screen.getByRole("button", { name: "Repetir voz" }));
+    expect(siguiente().getAttribute("data-resaltado")).toBe("false");
   });
 
   it("los textos salen en euskera con la familia en euskera y no hay ni rastro de costes", () => {
@@ -127,6 +186,7 @@ describe("LectorCuento", () => {
       </I18nProvider>,
     );
     expect(screen.getByRole("button", { name: t("cuento.siguiente", "eu") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: t("cuento.pausar", "eu") })).toBeTruthy();
     expect(screen.getByText(t("cuento.escena", "eu", { n: 1, total: 3 }))).toBeTruthy();
     expect(container.textContent).not.toMatch(/céntim|coste|token|USD|€|\$/i);
   });
@@ -139,7 +199,16 @@ describe("cargar el cuento guardado", () => {
       cuentos: [{ id: ID, titulo: "El panal", lugar_clave: "bosque", estado: "listo", protagonistas: ["m2", "m1"] }],
       escenas: [
         { cuento_id: ID, orden: 2, texto: "Dos", audio_path: null },
-        { cuento_id: ID, orden: 1, texto: "Uno", audio_path: "f/p/c/escena-1.mp3" },
+        {
+          cuento_id: ID,
+          orden: 1,
+          texto: "Uno",
+          audio_path: "f/p/c/escena-1.mp3",
+          acciones: [
+            { personaje: "zumbillo", posicion: "centro", gesto: "revoloteo" },
+            { personaje: "luna", posicion: "arriba", gesto: "volar" }, // inválida: se descarta
+          ],
+        },
       ],
       munecos: [
         { id: "m1", clave: "zumbillo", nombre: "Zumbillo" },
@@ -147,7 +216,7 @@ describe("cargar el cuento guardado", () => {
       ],
     });
 
-  it("devuelve escenas en orden, personajes en el orden elegido y URLs firmadas", async () => {
+  it("devuelve escenas en orden, personajes en el orden elegido, URLs firmadas y la puesta en escena válida", async () => {
     const r = await cargarCuento(datos().client, ID);
     expect(r).toEqual({
       titulo: "El panal",
@@ -157,8 +226,12 @@ describe("cargar el cuento guardado", () => {
         { clave: "zumbillo", nombre: "Zumbillo" },
       ],
       escenas: [
-        { texto: "Uno", audioUrl: "https://storage.test/f/p/c/escena-1.mp3?token=firmado" },
-        { texto: "Dos", audioUrl: null },
+        {
+          texto: "Uno",
+          audioUrl: "https://storage.test/f/p/c/escena-1.mp3?token=firmado",
+          acciones: [{ personaje: "zumbillo", posicion: "centro", gesto: "revoloteo" }],
+        },
+        { texto: "Dos", audioUrl: null, acciones: [] },
       ],
     });
   });
@@ -186,7 +259,7 @@ describe("cuento de ejemplo", () => {
       { clave: "flan", nombre: "Flan" },
       { clave: "otro", nombre: "otro" },
     ]);
-    expect(eu.escenas.every((e) => e.audioUrl === null)).toBe(true);
+    expect(eu.escenas.every((e) => e.audioUrl === null && e.acciones.length === 0)).toBe(true);
   });
 });
 
@@ -202,12 +275,12 @@ describe("página /cuento/[id]", () => {
       }),
     );
     expect(screen.getByText(CUENTOS_EJEMPLO.eu.escenas[0])).toBeTruthy();
-    expect(screen.getByTestId("fondo-lugar").getAttribute("style")).toContain("castillo.webp");
+    expect(srcFondo()).toContain("castillo.webp");
   });
 
   it("el ejemplo sin parámetros válidos cae a Luppo en el bosque", async () => {
     render(await CuentoPage({ params: params({ id: "ejemplo" }), searchParams: params({ lugar: "volcan" }) }));
-    expect(screen.getByTestId("fondo-lugar").getAttribute("style")).toContain("bosque.webp");
+    expect(srcFondo()).toContain("bosque.webp");
   });
 
   it("un id desconocido da 404", async () => {

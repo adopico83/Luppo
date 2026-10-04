@@ -62,8 +62,8 @@ export const eu: Record<ClaveTexto, string> = {
   // Cuento
   "cuento.personajes": "Ipuineko pertsonaiak",
   "cuento.escena": "{n}. eszena ({total} guztira)",
-  "cuento.escuchar": "Entzun",
   "cuento.pausar": "Pausatu",
+  "cuento.repetir": "Errepikatu ahotsa",
   "cuento.siguiente": "Hurrengoa",
   "cuento.fin": "Amaiera",
 

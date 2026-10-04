@@ -217,3 +217,43 @@ body {
   [class*="malabar-"],
   .fondo-mancha { animation: none !important; }
 }
+
+/* Movimientos de los personajes dentro de una escena del cuento (components/LectorCuento.tsx).
+   Van en una capa propia, entre la posición y el dibujo, para no pisar el gesto (`gesto-*`).
+   --lado vale -1 si el personaje está a la izquierda y 1 a la derecha: de ahí entra o por ahí sale. */
+.mover-entrar { animation: entrar 1.8s ease-out both; }
+.mover-salir { animation: salir 2.8s ease-in both; }
+.mover-caminar { animation: paseo 3.5s ease-in-out both, vaiven 0.5s ease-in-out 7 alternate; }
+.mover-saltar { animation: saltito 0.8s ease-out 2; }
+/* Patinete: avanza por el camino de izquierda a derecha con un leve vaivén. */
+.mover-patinete { animation: avance-patinete 9s ease-in-out both, vaiven 0.6s ease-in-out 15 alternate; }
+
+@keyframes entrar {
+  from { transform: translateX(calc(var(--lado) * 80vw)); opacity: 0; }
+  50% { opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes salir {
+  0%, 35% { transform: none; opacity: 1; }
+  100% { transform: translateX(calc(var(--lado) * 80vw)); opacity: 0; }
+}
+@keyframes paseo {
+  from { translate: calc(var(--lado) * -22vw) 0; }
+  to { translate: 0 0; }
+}
+@keyframes avance-patinete {
+  from { translate: -28vw 0; }
+  to { translate: 28vw 0; }
+}
+@keyframes vaiven {
+  from { transform: translateY(0) rotate(-2deg); }
+  to { transform: translateY(-1.2dvh) rotate(2deg); }
+}
+@keyframes saltito {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-9dvh); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="mover-"] { animation: none !important; }
+}

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { esLugar, type ClaveLugar } from "@/lib/catalogo/lugares";
 import type { Idioma } from "@/lib/i18n";
 import { urlsFirmadas } from "./audio";
+import { leerAcciones, type AccionPersonaje } from "./escena";
 import { CUENTOS_EJEMPLO } from "./ejemplo";
 
 // Lo que necesita la pantalla del cuento. No lleva nada de coste, tokens ni modelo: eso no es para el niño.
@@ -9,7 +10,7 @@ export type CuentoLectura = {
   titulo: string;
   lugar: ClaveLugar;
   personajes: { clave: string; nombre: string }[];
-  escenas: { texto: string; audioUrl: string | null }[];
+  escenas: { texto: string; audioUrl: string | null; acciones: AccionPersonaje[] }[];
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,7 +30,7 @@ export async function cargarCuento(supabase: SupabaseClient, id: string): Promis
 
   const { data: escenas } = await supabase
     .from("escenas")
-    .select("orden, texto, audio_path")
+    .select("orden, texto, audio_path, acciones")
     .eq("cuento_id", id)
     .order("orden", { ascending: true });
   if (!escenas || escenas.length === 0) return null;
@@ -44,7 +45,11 @@ export async function cargarCuento(supabase: SupabaseClient, id: string): Promis
     titulo: (cuento.titulo as string | null) ?? "",
     lugar: cuento.lugar_clave,
     personajes,
-    escenas: escenas.map((e, i) => ({ texto: e.texto as string, audioUrl: urls[i] })),
+    escenas: escenas.map((e, i) => ({
+      texto: e.texto as string,
+      audioUrl: urls[i],
+      acciones: leerAcciones(e.acciones),
+    })),
   };
 }
 
@@ -60,7 +65,7 @@ export async function cuentoDeEjemplo(
     titulo: ejemplo.titulo,
     lugar,
     personajes: await nombresDe(supabase, "clave", claves),
-    escenas: ejemplo.escenas.map((texto) => ({ texto, audioUrl: null })),
+    escenas: ejemplo.escenas.map((texto) => ({ texto, audioUrl: null, acciones: [] })),
   };
 }
 

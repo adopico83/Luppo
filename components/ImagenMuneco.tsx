@@ -10,6 +10,10 @@ type Props = {
   // Mientras sea true, reproduce el gesto del personaje; avisa al terminar.
   gesto?: boolean;
   onGestoTerminado?: () => void;
+  // «recorte»: personaje de cuerpo entero sin fondo ni marco (public/recortes), para ponerlo sobre un
+  // decorado. `nombreGesto` fuerza un gesto concreto (sin el prefijo `gesto-`) en vez del propio.
+  variante?: "tarjeta" | "recorte";
+  nombreGesto?: string;
 };
 
 // Fondos suaves y apagados (paleta Luppo a baja opacidad).
@@ -34,8 +38,11 @@ export function ImagenMuneco({
   className = "",
   gesto = false,
   onGestoTerminado,
+  variante = "tarjeta",
+  nombreGesto,
 }: Props) {
-  const animacion = gesto ? (claseGesto(clave) ?? "") : "";
+  const propio = nombreGesto ? `gesto-${nombreGesto}` : claseGesto(clave);
+  const animacion = gesto ? (propio ?? "") : "";
   const [fallo, setFallo] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
 
@@ -62,11 +69,11 @@ export function ImagenMuneco({
     // eslint-disable-next-line @next/next/no-img-element -- imágenes estáticas sin optimizar
     <img
       ref={ref}
-      src={`/munecos/${clave}.jpg`}
+      src={variante === "recorte" ? `/recortes/${clave}.webp` : `/munecos/${clave}.jpg`}
       alt={nombre}
       onError={() => setFallo(true)}
       onAnimationEnd={onGestoTerminado}
-      className={`rounded-3xl object-cover ${className} ${animacion}`}
+      className={`${variante === "recorte" ? "object-contain" : "rounded-3xl object-cover"} ${className} ${animacion}`}
     />
   );
 }

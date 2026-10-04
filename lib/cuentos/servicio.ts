@@ -213,6 +213,7 @@ async function guardarEscenas(
     tipo: i === cuento.escenas.length - 1 ? "final" : "narracion",
     habla: "narrador",
     texto: escena.texto,
+    acciones: escena.personajes,
     fondo_clave: lugar,
   }));
   const { data, error } = await supabase.from("escenas").insert(filas).select("id, clave, texto, orden");

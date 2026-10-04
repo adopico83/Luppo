@@ -11,6 +11,7 @@ const personajes = [
   { clave: "luna", nombre: "Luna" },
 ];
 const escenas = (n: number) => Array.from({ length: n }, (_, i) => ({ texto: `Escena ${i + 1}` }));
+const puesta = { personaje: "zumbillo", posicion: "izquierda", gesto: "revoloteo", accion: "entrar" };
 
 const clienteQue = (...respuestas: unknown[]) => {
   const create = vi.fn();
@@ -26,16 +27,31 @@ beforeEach(() => vi.unstubAllEnvs());
 afterEach(() => vi.unstubAllEnvs());
 
 describe("esquema del cuento", () => {
-  it("acepta título y de 4 a 6 escenas", () => {
-    for (const n of [4, 5, 6]) {
+  it("acepta título y de 5 a 7 escenas", () => {
+    for (const n of [5, 6, 7]) {
       expect(CuentoGeneradoSchema.safeParse({ titulo: "El panal", escenas: escenas(n) }).success).toBe(true);
     }
   });
-  it("rechaza menos de 4 o más de 6 escenas, textos vacíos y falta de título", () => {
-    expect(CuentoGeneradoSchema.safeParse({ titulo: "x", escenas: escenas(3) }).success).toBe(false);
-    expect(CuentoGeneradoSchema.safeParse({ titulo: "x", escenas: escenas(7) }).success).toBe(false);
-    expect(CuentoGeneradoSchema.safeParse({ titulo: "x", escenas: [...escenas(3), { texto: " " }] }).success).toBe(false);
-    expect(CuentoGeneradoSchema.safeParse({ escenas: escenas(4) }).success).toBe(false);
+  it("rechaza menos de 5 o más de 7 escenas, textos vacíos y falta de título", () => {
+    expect(CuentoGeneradoSchema.safeParse({ titulo: "x", escenas: escenas(4) }).success).toBe(false);
+    expect(CuentoGeneradoSchema.safeParse({ titulo: "x", escenas: escenas(8) }).success).toBe(false);
+    expect(CuentoGeneradoSchema.safeParse({ titulo: "x", escenas: [...escenas(4), { texto: " " }] }).success).toBe(false);
+    expect(CuentoGeneradoSchema.safeParse({ escenas: escenas(5) }).success).toBe(false);
+  });
+  it("valida la puesta en escena: posición, gesto existente y acción opcional", () => {
+    const con = (personajes: unknown[]) => ({
+      titulo: "x",
+      escenas: [{ texto: "a", personajes }, ...escenas(4)],
+    });
+    expect(CuentoGeneradoSchema.safeParse(con([puesta])).success).toBe(true);
+    expect(CuentoGeneradoSchema.safeParse(con([{ ...puesta, accion: undefined }])).success).toBe(true);
+    expect(CuentoGeneradoSchema.safeParse(con([{ ...puesta, posicion: "arriba" }])).success).toBe(false);
+    expect(CuentoGeneradoSchema.safeParse(con([{ ...puesta, gesto: "volar" }])).success).toBe(false);
+    expect(CuentoGeneradoSchema.safeParse(con([{ ...puesta, accion: "bailar" }])).success).toBe(false);
+  });
+  it("sin personajes en la escena asume una lista vacía", () => {
+    const r = CuentoGeneradoSchema.parse({ titulo: "x", escenas: escenas(5) });
+    expect(r.escenas[0].personajes).toEqual([]);
   });
 });
 
@@ -45,22 +61,25 @@ describe("prompt", () => {
     expect([5, 6, 7].map(bandaDeEdad)).toEqual(["5-6", "5-6", "5-6"]);
   });
 
-  it("3-4 años: 250-350 palabras, frases cortas y repetición", () => {
+  it("3-4 años: 150-250 palabras, 5-6 escenas, frases cortas y repetición", () => {
     const { system, user, version } = construirPrompt({ personajes, lugar: "bosque", idioma: "es", edad: 4 });
-    expect(system).toContain("250 y 350 palabras");
+    expect(system).toContain("150 y 250 palabras");
+    expect(system).toMatch(/1-3 frases CORTAS/);
+    expect(system).toMatch(/revoloteo/);
+    expect(system).toMatch(/izquierda, centro, derecha/);
     expect(system).toMatch(/repetición/);
     expect(system).toContain("castellano");
     expect(system).toMatch(/Nada de miedo, violencia/);
     expect(system).toMatch(/calmado/);
     expect(user).toContain("Lugar: Bosque.");
-    expect(user).toContain("- Zumbillo (especie: abeja; personalidad: Trabajador; forma de hablar: Con «z»)");
-    expect(user).toContain("- Luna");
-    expect(version).toBe("cuento-v1");
+    expect(user).toContain("- [zumbillo] Zumbillo (especie: abeja; personalidad: Trabajador; forma de hablar: Con «z»)");
+    expect(user).toContain("- [luna] Luna");
+    expect(version).toBe("cuento-v2");
   });
 
-  it("5-6 años: 450-600 palabras con problema y solución", () => {
+  it("5-6 años: 250-400 palabras con problema y solución", () => {
     const { system } = construirPrompt({ personajes, lugar: "playa", idioma: "es", edad: 6 });
-    expect(system).toContain("450 y 600 palabras");
+    expect(system).toContain("250 y 400 palabras");
     expect(system).toMatch(/problema/);
     expect(system).toMatch(/solución/);
   });
@@ -77,12 +96,12 @@ describe("generarTextoCuento", () => {
   const entrada = { personajes, lugar: "bosque", idioma: "es", edad: 4 } as const;
 
   it("devuelve el cuento validado, el modelo por defecto y los tokens", async () => {
-    const { cliente, create } = clienteQue(toolUse({ titulo: "El panal", escenas: escenas(4) }));
+    const { cliente, create } = clienteQue(toolUse({ titulo: "El panal", escenas: escenas(5) }));
     const r = await generarTextoCuento(entrada, cliente);
     expect(r.cuento.titulo).toBe("El panal");
-    expect(r.cuento.escenas).toHaveLength(4);
+    expect(r.cuento.escenas).toHaveLength(5);
     expect(r.modelo).toBe(MODELO_TEXTO_POR_DEFECTO);
-    expect(r).toMatchObject({ version: "cuento-v1", tokensEntrada: 500, tokensSalida: 900 });
+    expect(r).toMatchObject({ version: "cuento-v2", tokensEntrada: 500, tokensSalida: 900 });
     const args = create.mock.calls[0][0];
     expect(args.model).toBe("claude-haiku-4-5");
     expect(args.tool_choice).toEqual({ type: "tool", name: "entregar_cuento" });
@@ -90,7 +109,7 @@ describe("generarTextoCuento", () => {
 
   it("ANTHROPIC_MODEL cambia el modelo", async () => {
     vi.stubEnv("ANTHROPIC_MODEL", "claude-otro");
-    const { cliente, create } = clienteQue(toolUse({ titulo: "T", escenas: escenas(4) }));
+    const { cliente, create } = clienteQue(toolUse({ titulo: "T", escenas: escenas(5) }));
     const r = await generarTextoCuento(entrada, cliente);
     expect(r.modelo).toBe("claude-otro");
     expect(create.mock.calls[0][0].model).toBe("claude-otro");
@@ -99,7 +118,7 @@ describe("generarTextoCuento", () => {
   it("reintenta una vez si la salida no es válida y suma los tokens de los dos intentos", async () => {
     const { cliente, create } = clienteQue(
       toolUse({ titulo: "T", escenas: escenas(2) }, { input_tokens: 100, output_tokens: 50 }),
-      toolUse({ titulo: "T", escenas: escenas(5) }, { input_tokens: 100, output_tokens: 700 }),
+      toolUse({ titulo: "T", escenas: escenas(6) }, { input_tokens: 100, output_tokens: 700 }),
     );
     const r = await generarTextoCuento(entrada, cliente);
     expect(create).toHaveBeenCalledTimes(2);
