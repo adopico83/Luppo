@@ -70,3 +70,11 @@ const salida = await sharp(data, { raw: { width, height, channels } })
   .webp({ quality: 85, alphaQuality: 90 })
   .toFile(DESTINO);
 console.log("papel", papel, "->", DESTINO, `${Math.round(salida.size / 1024)} KB`);
+
+// Versión ajustada al cuerpo de Luppo (sin el lienzo vacío de 1280×720) para la pantalla de login.
+const AJUSTADO = "public/fondos/luppo-login.webp";
+const ajustado = await sharp(DESTINO)
+  .extract({ left: 340, top: 0, width: 680, height: 700 })
+  .webp({ quality: 85, alphaQuality: 90 })
+  .toFile(AJUSTADO);
+console.log("->", AJUSTADO, `${Math.round(ajustado.size / 1024)} KB`);
