@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FondoLuppo } from "@/components/FondoLuppo";
 import { redirect } from "next/navigation";
 import { LUGARES } from "@/lib/catalogo/lugares";
 import { textosServidor } from "@/lib/i18n/servidor";
@@ -16,7 +17,8 @@ export default async function LugaresPage({
   const { t } = await textosServidor();
 
   return (
-    <main className="flex min-h-dvh flex-col gap-8 bg-crema p-6 md:p-10">
+    <main className="flex min-h-dvh flex-col gap-8 p-6 md:p-10">
+      <FondoLuppo />
       <Link
         href="/personajes"
         className="inline-flex min-h-[120px] min-w-[120px] items-center self-start text-2xl font-extrabold text-tinta underline"
@@ -29,7 +31,7 @@ export default async function LugaresPage({
           <li key={clave}>
             <Link
               href={`/espera?personajes=${personajes.join(",")}&lugar=${clave}`}
-              className="relative flex aspect-[4/3] min-h-[120px] flex-col justify-end overflow-hidden rounded-3xl shadow-md transition-transform active:scale-95"
+              className="relative flex aspect-[4/5] min-h-[120px] flex-col justify-end overflow-hidden rounded-3xl shadow-md transition-transform active:scale-95"
             >
               <Image
                 src={fondo}
@@ -38,7 +40,7 @@ export default async function LugaresPage({
                 sizes="(min-width: 896px) 224px, (min-width: 768px) 25vw, 50vw"
                 className="object-cover"
               />
-              <span className="relative bg-crema/95 px-2 py-2 text-center text-lg font-extrabold leading-tight text-tinta md:text-xl">
+              <span className="relative bg-crema/85 px-2 py-1 text-center text-base font-extrabold leading-tight text-tinta backdrop-blur-sm md:text-lg">
                 {t(`lugar.${clave}`)}
               </span>
             </Link>

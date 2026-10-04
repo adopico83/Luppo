@@ -1,0 +1,38 @@
+// Fondo decorativo suave para las pantallas de elegir (personajes, lugares, espera): sobre el
+// crema base pone textura de papel, manchas de acuarela apagadas, colinas y unas estrellitas.
+// Todo es CSS/SVG inline, va fijo por detrás del contenido y no recibe clics. Las manchas se
+// mecen muy despacio; prefers-reduced-motion lo deja quieto (ver globals.css).
+const PAPEL =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
+const ESTRELLAS = [
+  [8, 6, 3], [22, 14, 2], [41, 5, 2.5], [63, 11, 2], [82, 7, 3], [93, 17, 2],
+] as const;
+
+export function FondoLuppo() {
+  return (
+    <div
+      aria-hidden="true"
+      data-testid="fondo-luppo"
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+    >
+      <div className="fondo-mancha fondo-mancha-1 absolute -left-[15%] -top-[10%] h-[55%] w-[75%] rounded-full bg-salvia opacity-20 blur-3xl" />
+      <div className="fondo-mancha fondo-mancha-2 absolute -right-[20%] top-[25%] h-[50%] w-[70%] rounded-full bg-rosa opacity-25 blur-3xl" />
+      <div className="fondo-mancha fondo-mancha-3 absolute -left-[10%] bottom-[10%] h-[40%] w-[65%] rounded-full bg-[#8fa3b8] opacity-20 blur-3xl" />
+
+      <svg className="absolute inset-x-0 top-0 h-[22%] w-full" viewBox="0 0 100 22" preserveAspectRatio="none">
+        {ESTRELLAS.map(([x, y, r]) => (
+          <circle key={`${x}-${y}`} cx={x} cy={y} r={r / 6} fill="#c99a4b" opacity="0.3" />
+        ))}
+      </svg>
+
+      <svg className="absolute inset-x-0 bottom-0 h-[22%] w-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+        <path d="M0 55 Q70 15 160 45 T400 30 V100 H0Z" fill="#9db08f" opacity="0.22" />
+        <path d="M0 75 Q100 40 200 70 T400 60 V100 H0Z" fill="#9db08f" opacity="0.28" />
+        <path d="M0 92 Q120 78 240 90 T400 86 V100 H0Z" fill="#8a9f7c" opacity="0.3" />
+      </svg>
+
+      <div className="absolute inset-0 opacity-[0.07] mix-blend-multiply" style={{ backgroundImage: PAPEL }} />
+    </div>
+  );
+}

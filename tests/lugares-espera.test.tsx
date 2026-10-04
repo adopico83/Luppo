@@ -57,6 +57,11 @@ describe("pantalla de lugares", () => {
     expect(playa.querySelector("img")?.getAttribute("src")).toContain("playa.webp");
     expect(playa.textContent).toBe("Playa");
     expect(lista.getByRole("link", { name: "Parque de atracciones" })).toBeTruthy();
+    // La imagen cubre toda la tarjeta y el nombre es una franja fina encima
+    expect(playa.className).toContain("aspect-[4/5]");
+    expect(playa.querySelector("img")?.className).toContain("object-cover");
+    expect(playa.querySelector("span")?.className).toContain("backdrop-blur-sm");
+    expect(screen.getByTestId("fondo-luppo")).toBeTruthy();
   });
 
   it("tiene botón Volver al carrusel", async () => {
@@ -76,6 +81,9 @@ describe("ruta de espera", () => {
   it("con lugar y personajes válidos enseña la pantalla de espera", async () => {
     render(await EsperaPage({ searchParams: params({ personajes: "flan", lugar: "bosque" }) }));
     expect(screen.getByRole("status")).toBeTruthy();
+    const fondo = screen.getByTestId("fondo-luppo");
+    expect(fondo.getAttribute("aria-hidden")).toBe("true");
+    expect(fondo.className).toContain("pointer-events-none");
   });
 
   it("si falta el lugar vuelve a elegirlo; si faltan los personajes, al carrusel", async () => {

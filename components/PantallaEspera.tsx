@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FondoLuppo } from "@/components/FondoLuppo";
 import { useT } from "@/components/I18nProvider";
 import { AVISO_CUENTO_PROXIMO } from "@/lib/avisos";
 
@@ -31,11 +32,8 @@ export function PantallaEspera() {
   }, [router]);
 
   return (
-    <main
-      className="relative flex min-h-dvh flex-col items-center justify-center bg-crema bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url(/fondos/casa-luppo.webp)" }}
-    >
-      <div aria-hidden="true" className="absolute inset-0 bg-crema/60" />
+    <main className="relative flex min-h-dvh flex-col items-center justify-center">
+      <FondoLuppo />
       <div className="relative flex w-full max-w-md flex-col items-center gap-4 px-4 py-6">
         <h1 className="sr-only">{t("espera.titulo")}</h1>
 
