@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { rutaAudio, subirAudioSiFalta, urlsFirmadas } from "@/lib/cuentos/audio";
+import { existeAudio, rutaAudio, subirAudioSiFalta, urlsFirmadas } from "@/lib/cuentos/audio";
 import { configVoz, MODELO_VOZ_POR_DEFECTO } from "@/lib/cuentos/config";
 import { duracionEstimadaMs, ErrorVoz, sintetizarVoz } from "@/lib/cuentos/voz";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -74,6 +74,14 @@ describe("almacenamiento privado", () => {
       contentType: "audio/mpeg",
       upsert: false,
     });
+  });
+
+  it("detecta si el audio ya existe para no volver a pagar la voz", async () => {
+    const list = vi.fn().mockResolvedValueOnce({ data: [{ name: "escena-1.mp3" }] }).mockResolvedValueOnce({ data: [] });
+    const { client } = supabaseCon({ list });
+    expect(await existeAudio(client, "f/p/c/escena-1.mp3")).toBe(true);
+    expect(await existeAudio(client, "f/p/c/escena-1.mp3")).toBe(false);
+    expect(list).toHaveBeenCalledWith("f/p/c", { search: "escena-1.mp3", limit: 1 });
   });
 
   it("propaga otros errores de subida", async () => {
