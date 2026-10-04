@@ -2,8 +2,9 @@
 
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { ENVIADO, LIMITE } from "./textos";
 
-export type EstadoLogin = { ok: boolean | null; mensaje: string };
+export type EstadoLogin = { ok: boolean | null; mensaje: string; limite?: boolean };
 
 const EMAIL_VALIDO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -32,10 +33,11 @@ export async function enviarEnlace(
     const limite = error.status === 429 || /rate|seconds/i.test(error.message);
     return {
       ok: false,
+      limite,
       mensaje: limite
-        ? "Has pedido muchos enlaces seguidos. Espera un poco y vuelve a intentarlo."
-        : "No hemos podido enviar el enlace. Inténtalo de nuevo en un momento.",
+        ? LIMITE
+        : "Uy, no he podido mandar la llave mágica. Inténtalo de nuevo en un momento.",
     };
   }
-  return { ok: true, mensaje: "Listo. Te hemos enviado un enlace: ábrelo desde tu email." };
+  return { ok: true, mensaje: ENVIADO };
 }
