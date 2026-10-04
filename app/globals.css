@@ -201,6 +201,12 @@ body {
 .fondo-mancha { animation: fondo-mancha 28s ease-in-out infinite alternate; }
 .fondo-mancha-2 { animation-duration: 34s; animation-delay: -9s; }
 .fondo-mancha-3 { animation-duration: 40s; animation-delay: -17s; }
+/* Las aguadas de arriba son SVG: el transform necesita su propia caja y un vaivén más corto. */
+.fondo-aguada .fondo-mancha { transform-box: fill-box; transform-origin: center; animation-name: fondo-aguada; }
+@keyframes fondo-aguada {
+  from { transform: translate(0, 0); }
+  to { transform: translate(3%, 6%); }
+}
 @keyframes fondo-mancha {
   from { transform: translate(0, 0) scale(1); }
   to { transform: translate(4%, 3%) scale(1.08); }
