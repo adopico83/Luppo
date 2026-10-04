@@ -1,4 +1,5 @@
 import { BotonGigante } from "@/components/BotonGigante";
+import { LuppoCasa } from "@/components/LuppoCasa";
 
 // Pantalla de bienvenida: la casa de Luppo a pantalla completa.
 //
@@ -22,14 +23,7 @@ export function CasaLuppo() {
         <BotonGigante href="/personajes">¡Vamos a crear un cuento!</BotonGigante>
       </div>
 
-      {/* Luppo recortado (npm run recortar:luppo), con el mismo lienzo de 1280×720 que el original:
-          su cuerpo queda en el 53 % del ancho de la imagen y sus pies al 93 % de la altura. */}
-      {/* eslint-disable-next-line @next/next/no-img-element -- imagen estática ya optimizada */}
-      <img
-        src="/fondos/luppo-casa.webp"
-        alt="Luppo"
-        className="pointer-events-none absolute bottom-[calc(var(--u)*63)] left-1/2 h-[calc(var(--u)*250)] w-auto max-w-none -translate-x-[53%]"
-      />
+      <LuppoCasa />
     </main>
   );
 }

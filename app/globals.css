@@ -30,3 +30,126 @@ body {
 .escena-casa {
   --u: max(100vw / 1280, 100dvh / 720);
 }
+
+/* Gestos de los personajes (lib/catalogo/gestos.ts): una sola pasada, suaves, 0,6–1,2 s. */
+.gesto-saludo-pillo { animation: saludo-pillo 1s ease-in-out 1; transform-origin: 50% 100%; }
+.gesto-salto-aleteo { animation: salto-aleteo 1s ease-in-out 1; transform-origin: 50% 100%; }
+.gesto-mirar-lados { animation: mirar-lados 1.2s ease-in-out 1; transform-origin: 50% 80%; }
+.gesto-estirar-lento { animation: estirar-lento 1.2s ease-in-out 1; transform-origin: 0% 100%; }
+.gesto-flotar-balanceo { animation: flotar-balanceo 1.2s ease-in-out 1; transform-origin: 50% 50%; }
+.gesto-robotico { animation: robotico 1s steps(1, end) 1; transform-origin: 50% 100%; }
+.gesto-rebote-blando { animation: rebote-blando 0.9s ease-in-out 1; transform-origin: 50% 100%; }
+.gesto-giro-brillo { animation: giro-brillo 1.2s ease-in-out 1; transform-origin: 50% 50%; }
+.gesto-rodar-poco { animation: rodar-poco 1s ease-in-out 1; transform-origin: 50% 100%; }
+.gesto-hamaca { animation: hamaca 1.2s ease-in-out 1; transform-origin: 50% 0%; }
+.gesto-bailecito-caderas { animation: bailecito-caderas 0.8s ease-in-out 1; transform-origin: 50% 100%; }
+.gesto-tembleque { animation: tembleque 0.6s ease-in-out 1; transform-origin: 50% 100%; }
+.gesto-subir-bajar { animation: subir-bajar 1.2s ease-in-out 1; transform-origin: 50% 100%; }
+.gesto-revoloteo { animation: revoloteo 1s ease-in-out 1; transform-origin: 50% 50%; }
+.gesto-pendulo { animation: pendulo 0.9s ease-out 1; transform-origin: 50% 0%; }
+.gesto-hinchar { animation: hinchar 1s ease-in-out 1; transform-origin: 50% 50%; }
+.gesto-agacha-saltito { animation: agacha-saltito 1s ease-in-out 1; transform-origin: 50% 100%; }
+
+@keyframes saludo-pillo {
+  0%, 100% { transform: rotate(0); }
+  35%, 60% { transform: rotate(-9deg); }
+  80% { transform: rotate(0) translateY(-6%); }
+}
+@keyframes salto-aleteo {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-18%); }
+  50% { transform: translateY(-18%) rotate(-3deg); }
+  60% { transform: translateY(-18%) rotate(3deg); }
+  70% { transform: translateY(-18%) rotate(-2deg); }
+}
+@keyframes mirar-lados {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-8deg); }
+  60% { transform: rotate(8deg); }
+}
+@keyframes estirar-lento {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(1.18); }
+}
+@keyframes flotar-balanceo {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-12%) rotate(3deg); }
+  70% { transform: translateY(-10%) rotate(-3deg); }
+}
+@keyframes robotico {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(8deg); }
+  40% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+  80% { transform: rotate(-6deg); }
+}
+@keyframes rebote-blando {
+  0%, 100% { transform: scale(1, 1); }
+  25% { transform: scale(1.15, 0.8); }
+  55% { transform: scale(0.92, 1.12); }
+  80% { transform: scale(1.04, 0.96); }
+}
+@keyframes giro-brillo {
+  0%, 100% { transform: rotate(0) scale(1); filter: brightness(1); }
+  50% { transform: rotate(180deg) scale(1.15); filter: brightness(1.2); }
+  99% { transform: rotate(360deg) scale(1); filter: brightness(1); }
+}
+@keyframes rodar-poco {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  40% { transform: translateX(6%) rotate(14deg); }
+}
+@keyframes hamaca {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(-7deg); }
+  70% { transform: rotate(7deg); }
+}
+@keyframes bailecito-caderas {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-5deg); }
+  40% { transform: rotate(5deg); }
+  60% { transform: rotate(-5deg); }
+  80% { transform: rotate(5deg); }
+}
+@keyframes tembleque {
+  0%, 100% { transform: skewX(0) scale(1, 1); }
+  15% { transform: skewX(4deg) scale(1.05, 0.95); }
+  30% { transform: skewX(-4deg) scale(0.97, 1.03); }
+  45% { transform: skewX(3deg) scale(1.04, 0.96); }
+  60% { transform: skewX(-3deg) scale(0.98, 1.02); }
+  80% { transform: skewX(1.5deg) scale(1.01, 0.99); }
+}
+@keyframes subir-bajar {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20%); }
+}
+@keyframes revoloteo {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  12% { transform: translate(4%, -4%) rotate(2deg); }
+  25% { transform: translate(0, -6%) rotate(-2deg); }
+  37% { transform: translate(-4%, -4%) rotate(2deg); }
+  50% { transform: translate(0, 0) rotate(-2deg); }
+  62% { transform: translate(4%, 4%) rotate(2deg); }
+  75% { transform: translate(0, 6%) rotate(-2deg); }
+  87% { transform: translate(-4%, 3%) rotate(1deg); }
+}
+@keyframes pendulo {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+  80% { transform: rotate(-6deg); }
+}
+@keyframes hinchar {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  75% { transform: scale(0.96); }
+}
+@keyframes agacha-saltito {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  25% { transform: translateY(4%) scale(1.08, 0.82); }
+  55% { transform: translateY(-16%) scale(0.95, 1.08); }
+  80% { transform: translateY(0) scale(1.04, 0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="gesto-"] { animation: none !important; }
+}

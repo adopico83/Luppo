@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { reducirMovimiento } from "@/lib/movimiento";
 import { BotonGigante } from "@/components/BotonGigante";
 import { ImagenMuneco } from "@/components/ImagenMuneco";
 import {
@@ -20,8 +21,10 @@ export function CarruselPersonajes({ munecos }: Props) {
   const pista = useRef<HTMLDivElement>(null);
   const [seleccion, setSeleccion] = useState<string[]>([]);
   const [aviso, setAviso] = useState("");
+  const [gesto, setGesto] = useState<string | null>(null);
 
   function tocar(clave: string) {
+    if (!reducirMovimiento()) setGesto(clave);
     const nueva = alternarSeleccion(seleccion, clave);
     if (nueva === seleccion) {
       setAviso(`Solo puedes elegir ${MAX_PERSONAJES}`);
@@ -69,6 +72,8 @@ export function CarruselPersonajes({ munecos }: Props) {
                   clave={clave}
                   nombre={nombre}
                   className="h-full min-h-0 w-full flex-1"
+                  gesto={gesto === clave}
+                  onGestoTerminado={() => setGesto(null)}
                 />
                 <span className="text-2xl font-extrabold text-tinta">
                   {nombre}

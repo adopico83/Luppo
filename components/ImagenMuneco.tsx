@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { claseGesto } from "@/lib/catalogo/gestos";
 
-type Props = { clave: string; nombre: string; className?: string };
+type Props = {
+  clave: string;
+  nombre: string;
+  className?: string;
+  // Mientras sea true, reproduce el gesto del personaje; avisa al terminar.
+  gesto?: boolean;
+  onGestoTerminado?: () => void;
+};
 
 // Fondos suaves y apagados (paleta Luppo a baja opacidad).
 const FONDOS = [
@@ -20,7 +28,14 @@ function fondoPara(clave: string): string {
 }
 
 // Muestra el dibujo del muñeco; si no existe aún, un bloque suave con su nombre.
-export function ImagenMuneco({ clave, nombre, className = "" }: Props) {
+export function ImagenMuneco({
+  clave,
+  nombre,
+  className = "",
+  gesto = false,
+  onGestoTerminado,
+}: Props) {
+  const animacion = gesto ? (claseGesto(clave) ?? "") : "";
   const [fallo, setFallo] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
 
@@ -35,7 +50,8 @@ export function ImagenMuneco({ clave, nombre, className = "" }: Props) {
       <div
         role="img"
         aria-label={nombre}
-        className={`flex items-center justify-center rounded-3xl p-2 text-center text-2xl font-extrabold text-tinta ${fondoPara(clave)} ${className}`}
+        className={`flex items-center justify-center rounded-3xl p-2 text-center text-2xl font-extrabold text-tinta ${fondoPara(clave)} ${className} ${animacion}`}
+        onAnimationEnd={onGestoTerminado}
       >
         {nombre}
       </div>
@@ -49,7 +65,8 @@ export function ImagenMuneco({ clave, nombre, className = "" }: Props) {
       src={`/munecos/${clave}.jpg`}
       alt={nombre}
       onError={() => setFallo(true)}
-      className={`rounded-3xl object-cover ${className}`}
+      onAnimationEnd={onGestoTerminado}
+      className={`rounded-3xl object-cover ${className} ${animacion}`}
     />
   );
 }
