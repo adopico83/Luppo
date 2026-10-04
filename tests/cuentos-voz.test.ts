@@ -31,6 +31,18 @@ describe("sintetizarVoz", () => {
     await expect(sintetizarVoz("x", config, vacio as unknown as typeof fetch)).rejects.toBeInstanceOf(ErrorVoz);
   });
 
+  it("incluye en el error el cuerpo de la respuesta (máx. 300 caracteres) y nunca la API key", async () => {
+    const cuerpo = `{"detail":"voice_not_found"}${"x".repeat(500)}`;
+    const mal = vi.fn().mockResolvedValue(new Response(cuerpo, { status: 404 }));
+    const error = await sintetizarVoz("x", config, mal as unknown as typeof fetch).catch((e: Error) => e);
+    expect(error).toBeInstanceOf(ErrorVoz);
+    const { message } = error as ErrorVoz;
+    expect(message).toContain("404");
+    expect(message).toContain("voice_not_found");
+    expect(message.length).toBeLessThanOrEqual("ElevenLabs respondió 404: ".length + 300);
+    expect(message).not.toContain(config.apiKey);
+  });
+
   it("estima la duración a 128 kbps", () => {
     expect(duracionEstimadaMs(new Uint8Array(160_000))).toBe(10_000);
   });
